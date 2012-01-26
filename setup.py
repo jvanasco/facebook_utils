@@ -30,7 +30,6 @@ setup(
     test_suite='tests',
     classifiers=[
         'License :: OSI Approved :: BSD License',
-        'Programming Language :: PHP',
         'Programming Language :: Python',
         "Framework :: Pylons",
         "Intended Audience :: Developers",
