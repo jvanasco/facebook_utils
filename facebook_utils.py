@@ -128,6 +128,11 @@ import urllib2
 import simplejson as json
 import cgi
 
+import base64
+import hashlib
+import hmac
+from time import time
+
 
 
 class FacebookHub(object):
@@ -240,6 +245,67 @@ class FacebookHub(object):
 
     def graph__get_profile( self , access_token=None  ):
         raise ValueError('Deprecated; call graph__get_profile_for_access_token instead')
+        
+    
+
+    def verify_signed_request( self , signed_request=None , timeout=None ):
+        """ verifies the signedRequest from Facebook.  accepts a timeout value, to test against the 'issued_at' key within the payload
+        
+        this will always return a Tuple of ( BOOL , DICT )
+        
+        Bool :
+            True = Signed Request is verified
+            False = Signed Request is not verified
+
+        Dict :
+            if request is verified: the payload object as JSON
+            if request is not verified: a 'python-error' key with the reason
+            
+        PLEASE NOTE:
+            1. if the request is verfied, but the data is outside of the timeout, this will return FALSE as a bool; and the dict will the verified payload with an 'python-error' key.
+            2. i chose 'python-error', because facebook is likely to change their spec. they do that. the chances of them adding 'error' are much greater than 'python-error'
+        
+        Reference documentation
+        https://developers.facebook.com/docs/authentication/signed_request/
+        "The signed_request parameter is the concatenation of a HMAC SHA-256 signature string, a period (.), and a base64url encoded JSON object."
+        
+        after starting this, i found someone already did the hard work.
+        following is based on Sunil Arora's blog post - http://sunilarora.org/parsing-signedrequest-parameter-in-python-bas
+        """
+        if signed_request is None:
+            raise ValueError('must submit signed_request')
+
+        def base64_url_decode(inp):
+            padding_factor = (4 - len(inp) % 4) % 4
+            inp += "="*padding_factor 
+            return base64.b64decode(unicode(inp).translate(dict(zip(map(ord, u'-_'), u'+/'))))
+        
+        (signature,payload)= signed_request.split('.')
+
+        decoded_signature = base64_url_decode(signature)
+        data = json.loads(base64_url_decode(payload))
+
+        if data.get('algorithm').upper() != 'HMAC-SHA256':
+            return ( False , { 'python-error':  'Unknown algorithm - %s' % data.get('algorithm').upper() } )
+
+        expected_sig = hmac.new( self.app_secret , msg=payload , digestmod=hashlib.sha256 ).digest()
+    
+        if decoded_signature != expected_sig:
+            return ( None , {'python-error': 'signature (%s) != expected_sig (%s)' % { decoded_signature , expected_sig }  } )
+            
+        if timeout:
+            time_now= int(time())
+            diff = time_now - data['issued_at']
+            if ( diff > timeout ) :
+                data['python-error']= "payload issued outside of timeout window"
+                return ( False , data )
+
+        return ( True , data )
+            
+            
+
+        
+
 
 
 
