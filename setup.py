@@ -21,7 +21,7 @@ setup(
     name='facebook_utils',
     author='Jonathan Vanasco',
     author_email='jonathan@findmeon.com',
-    version='0.12',
+    version='0.13',
     url='http://github.com/jvanasco/facebook_utils',
     py_modules=['facebook_utils'],
     description='simple utilites for facebook integration.',

@@ -125,6 +125,7 @@ r"""
 
 import urllib
 import urllib2
+import urlparse
 import simplejson as json
 import cgi
 
@@ -223,6 +224,38 @@ class FacebookHub(object):
         return """https://www.facebook.com/dialog/oauth?client_id=%(app_id)s&scope=%(scope)s&redirect_uri=%(redirect_uri)s&response_type=token""" % { 'app_id':self.app_id , "redirect_uri":urllib.quote( redirect_uri ) , 'scope':scope }
         
 
+    def oauth__url_extend_access_token( self, access_token=None ):
+        """Generates the URL to extend an access token from Facebook.  
+        
+        see https://developers.facebook.com/roadmap/offline-access-removal/
+
+        https://graph.facebook.com/oauth/access_token?             
+            client_id=APP_ID&
+            client_secret=APP_SECRET&
+            grant_type=fb_exchange_token&
+            fb_exchange_token=EXISTING_ACCESS_TOKEN 
+            
+        oddly, this returns a url formatted string and not a json document.  go figure.
+    
+        """
+        if access_token is None:
+            raise ValueError('must call with access_token')
+        return """https://graph.facebook.com/oauth/access_token?client_id=%(app_id)s&client_secret=%(client_secret)s&grant_type=fb_exchange_token&fb_exchange_token=%(access_token)s""" % { 'app_id':self.app_id , 'client_secret':self.app_secret, 'access_token':access_token }
+
+
+    def graph__extend_access_token( self , access_token=None ):
+        """ see oauth__url_extend_access_token  """
+        if access_token is None or not access_token :
+            raise ValueError('must submit access_token')
+        result= None
+        try:
+            result = urllib2.urlopen( self.oauth__url_extend_access_token(access_token=access_token) ).read()
+            result = urlparse.parse_qs( result )
+        except:
+            raise
+        return result
+
+
     def graph__url_me( self , access_token ):
         raise ValueError('Deprecated; call graph__url_me_for_access_token instead')
         
@@ -240,12 +273,17 @@ class FacebookHub(object):
             profile = json.load(urllib2.urlopen( self.graph__url_me_for_access_token(access_token) ))
         except:
             raise
-        return profile       
+        return profile
     
 
     def graph__get_profile( self , access_token=None  ):
         raise ValueError('Deprecated; call graph__get_profile_for_access_token instead')
         
+
+
+    
+    
+
     
 
     def verify_signed_request( self , signed_request=None , timeout=None ):

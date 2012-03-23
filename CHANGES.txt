@@ -1,3 +1,7 @@
+0.13 (2012-03-23)
+------------------
+- added support for extending access tokens see https://developers.facebook.com/roadmap/offline-access-removal/
+
 0.12 (2012-01-26)
 ------------------
 - added 'verify_signed_request' , which does exactly what the name suggests
