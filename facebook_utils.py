@@ -123,16 +123,22 @@ r"""
     license: BSD
 """
 
-import urllib
-import urllib2
-import urlparse
-import simplejson as json
-import cgi
-
 import base64
+import cgi
+import datetime
 import hashlib
 import hmac
 from time import time
+import urllib
+import urllib2
+import urlparse
+
+import simplejson as json
+
+
+def facebook_time(fb_time):
+    """parses facebook's timestamp into a datetime object"""
+    return datetime.datetime.strptime( fb_time, '%Y-%m-%dT%H:%M:%S+0000')
 
 
 
@@ -266,11 +272,29 @@ class FacebookHub(object):
         return "https://graph.facebook.com/me?" + urllib.urlencode(dict(access_token=access_token))
 
 
-    def graph__get_profile_for_access_token( self , access_token=None  ):
+    def graph__url_user_for_access_token( self , access_token=None , user=None , action=None ):
+        if access_token is None:
+            raise ValueError('must submit access_token')
+        if user is None:
+            raise ValueError('must submit user')
+        if action :
+            return "https://graph.facebook.com/%s/%s?%s" % ( user , action , urllib.urlencode(dict(access_token=access_token)) )
+        return "https://graph.facebook.com/%s?%s" % ( user , urllib.urlencode(dict(access_token=access_token)) )
+
+
+    def graph__get_profile_for_access_token( self , access_token=None  , user=None , action=None ):
         """Grabs a profile for a user, corresponding to a profile , from Facebook.  This uses urllib2 to open the url , so should be considered as blocking code."""
+        if access_token is None:
+            raise ValueError('must submit access_token')
         profile= None
         try:
-            profile = json.load(urllib2.urlopen( self.graph__url_me_for_access_token(access_token) ))
+            if not user :
+                if not action :
+                    profile = json.load(urllib2.urlopen( self.graph__url_me_for_access_token(access_token) ) )
+                else :
+                    profile = json.load(urllib2.urlopen( self.graph__url_user_for_access_token(access_token,action=action ) ) )
+            else :
+                profile = json.load(urllib2.urlopen( self.graph__url_user_for_access_token(access_token,user=user,action=action ) ) )
         except:
             raise
         return profile
@@ -279,12 +303,8 @@ class FacebookHub(object):
     def graph__get_profile( self , access_token=None  ):
         raise ValueError('Deprecated; call graph__get_profile_for_access_token instead')
         
-
-
-    
     
 
-    
 
     def verify_signed_request( self , signed_request=None , timeout=None ):
         """ verifies the signedRequest from Facebook.  accepts a timeout value, to test against the 'issued_at' key within the payload

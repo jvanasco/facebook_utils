@@ -21,7 +21,7 @@ setup(
     name='facebook_utils',
     author='Jonathan Vanasco',
     author_email='jonathan@findmeon.com',
-    version='0.13',
+    version='0.14',
     url='http://github.com/jvanasco/facebook_utils',
     py_modules=['facebook_utils'],
     description='simple utilites for facebook integration.',
@@ -31,7 +31,7 @@ setup(
     classifiers=[
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python',
-        "Framework :: Pylons",
+        "Framework :: Pyramid",
         "Intended Audience :: Developers",
     ]
 )

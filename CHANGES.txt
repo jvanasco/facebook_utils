@@ -1,3 +1,7 @@
+0.14 (2012-04-16)
+------------------
+- Updated to Pyramid Classifier
+
 0.13 (2012-03-23)
 ------------------
 - added support for extending access tokens see https://developers.facebook.com/roadmap/offline-access-removal/
