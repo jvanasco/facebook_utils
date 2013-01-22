@@ -1,3 +1,12 @@
+0.15 (2012-01-2)
+------------------
+- Adding Facebook OpenGraph actions API support
+-- graph__action_create
+-- graph__action_delete
+-- graph__action_list
+
+tests are tbd
+
 0.14 (2012-04-16)
 ------------------
 - Updated to Pyramid Classifier

@@ -203,6 +203,16 @@ class FacebookHub(object):
             if 'access_token' not in response:
                 raise ValueError('invalid response')
             access_token = response["access_token"][-1]
+        except urllib2.HTTPError , e :
+            if e.code == 400:
+                try:
+                    rval = e.read()
+                    rval = json.loads(rval)
+                    if 'error' in rval and rval['error']['type'] == 'OAuthException':
+                        raise ValueError("OAuthException: %s" % rval['error']['message'] )
+                except: 
+                    pass
+            raise
         except:
             raise
         return access_token       
@@ -302,9 +312,57 @@ class FacebookHub(object):
 
     def graph__get_profile( self , access_token=None  ):
         raise ValueError('Deprecated; call graph__get_profile_for_access_token instead')
-        
-    
 
+
+    def graph__action_create( self , access_token=None , fb_app_namespace=None , fb_action_type_name=None , object_type_name=None , object_instance_url=None):
+        if not all(( access_token , fb_app_namespace , fb_action_type_name )):
+            raise ValueError('must submit access_token , fb_app_namespace , fb_action_type_name' )
+        if not all(( object_type_name , object_instance_url )):
+            raise ValueError('must submit object_type_name , object_instance_url ' )
+        url = "https://graph.facebook.com/me/%s:%s" % ( fb_app_namespace , fb_action_type_name )
+        post_data = {
+            'access_token' : access_token ,
+            object_type_name : object_instance_url ,
+        }
+        post_data = urllib.urlencode(post_data)
+        try:
+            raw_data = urllib2.urlopen( url , post_data )
+            payload = json.load( raw_data )
+            return payload
+        except:
+            raise
+
+
+    def graph__action_list( self , access_token=None , fb_app_namespace=None , fb_action_type_name=None ):
+        if not all(( access_token , fb_app_namespace , fb_action_type_name )):
+            raise ValueError('must submit access_token , fb_app_namespace , fb_action_type_name' )
+        url = "https://graph.facebook.com/me/%s:%s?access_token=%s" % ( fb_app_namespace , fb_action_type_name , access_token )
+        try:
+            raw_data = urllib2.urlopen( url )
+            payload = json.load( raw_data )
+            return payload
+        except:
+            raise
+
+        
+    def graph__action_delete( self , access_token=None , action_id=None ):
+        if not all(( access_token , action_id )):
+            raise ValueError('must submit action_id' )
+        url = "https://graph.facebook.com/%s" % ( action_id )
+        post_data = {
+            'access_token' : access_token ,
+        }
+        post_data = urllib.urlencode(post_data)
+        try:
+        
+            opener = urllib2.build_opener(urllib2.HTTPHandler)
+            request = urllib2.Request(url,post_data)
+            request.get_method = lambda: 'DELETE'
+            raw_data = opener.open(request)
+            payload = json.load( raw_data )
+            return payload
+        except:
+            raise
 
     def verify_signed_request( self , signed_request=None , timeout=None ):
         """ verifies the signedRequest from Facebook.  accepts a timeout value, to test against the 'issued_at' key within the payload
