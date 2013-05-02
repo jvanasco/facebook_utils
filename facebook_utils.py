@@ -136,6 +136,36 @@ import urlparse
 import simplejson as json
 
 
+class ApiError( Exception ):
+    """
+    Raised if there is an error with authentication
+    """
+    code = None
+    type = None
+    message = None
+
+    def __init__( self , code=None, type=None, message=None ):
+        self.code = code
+        self.type = type
+        self.message = message
+        
+    def __str__( self ):
+        return "ApiError: %s | %s | %s" % ( self.code , self.type , self.message )
+
+class ApiAuthError(ApiError):
+    """
+    Raised if there is an error with authentication
+    """
+
+
+def reformat_error(json_string):
+    rval = { 'message':None , 'type': None , 'code': None }
+    for k in rval.keys():
+        if k in json_string:
+            rval[k] = json_string[k]
+    return rval
+
+
 def facebook_time(fb_time):
     """parses facebook's timestamp into a datetime object"""
     return datetime.datetime.strptime( fb_time, '%Y-%m-%dT%H:%M:%S+0000')
@@ -205,17 +235,24 @@ class FacebookHub(object):
             access_token = response["access_token"][-1]
         except urllib2.HTTPError , e :
             if e.code == 400:
+                rval = ''
                 try:
                     rval = e.read()
                     rval = json.loads(rval)
-                    if 'error' in rval and rval['error']['type'] == 'OAuthException':
-                        raise ValueError("OAuthException: %s" % rval['error']['message'] )
+                    if 'error' in rval : 
+                        error = reformat_error( rval['error'] )
+                        if error['type'] == 'OAuthException' :
+                            raise ApiAuthError(**error)
+                        raise ApiError(**error)
+                    raise RuntimeError()
+                except json.JSONDecodeError :
+                    raise ApiError( message = 'Could not parse JSON from the error (%s)' % rval)
                 except: 
-                    pass
+                    raise
             raise
         except:
             raise
-        return access_token       
+        return access_token
         
         
     def oauth_code__get_access_token_and_profile( self , submitted_code=None , redirect_uri=None , scope=None  ):

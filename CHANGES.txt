@@ -1,4 +1,9 @@
-0.15 (2012-01-2)
+0.16 (2013-05-2)
+------------------
+- added AuthException to better catch auth failures
+
+
+0.15 (2013-01-2)
 ------------------
 - Adding Facebook OpenGraph actions API support
 -- graph__action_create
