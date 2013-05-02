@@ -7,7 +7,7 @@ class TestFacebookUtils(unittest.TestCase):
 
     def _newHub(self):
         env= os.environ
-        if 0:
+        if True :
             if 'PYTHON_FB_UTILS_APP_ID' not in os.environ:
                 raise ValueError('Test must have PYTHON_FB_UTILS_APP_ID')
             PYTHON_FB_UTILS_APP_ID = os.environ['PYTHON_FB_UTILS_APP_ID']
@@ -47,5 +47,7 @@ class TestFacebookUtils(unittest.TestCase):
     def test_oauth_code__oauth_code__get_access_token__fails_without_code(self):
         hub= self._newHub()
         self.assertRaises(ValueError,lambda:hub.oauth_code__get_access_token())
-        
-    
+
+
+
+

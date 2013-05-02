@@ -216,23 +216,18 @@ class FacebookHub(object):
         if scope == None:
             scope= self.app_scope
         return """https://graph.facebook.com/oauth/access_token?client_id=%(app_id)s&redirect_uri=%(redirect_uri)s&client_secret=%(client_secret)s&code=%(code)s""" % { 'app_id':self.app_id , "redirect_uri":urllib.quote( redirect_uri ) , 'client_secret':self.app_secret, 'code':submitted_code }
-            
-
-    def oauth_code__get_access_token( self , submitted_code=None , redirect_uri=None , scope=None ):
-        """Gets the access token from Facebook that corresponds with a code.  This uses urllib2 to open the url , so should be considered as blocking code."""
-        if submitted_code is None:
-            raise ValueError('must call with submitted_code')
-        if scope == None:
-            scope= self.app_scope
-        if redirect_uri == None:
-            redirect_uri= self.oauth_code_redirect_uri
-        url_access_token = self.oauth_code__url_access_token( submitted_code , redirect_uri=redirect_uri , scope=scope )
-        access_token = None
+        
+    def api_proxy( self , url , expected_format='json'):
         try:
-            response = cgi.parse_qs(urllib2.urlopen(url_access_token).read())
-            if 'access_token' not in response:
-                raise ValueError('invalid response')
-            access_token = response["access_token"][-1]
+            print url
+            response = urllib2.urlopen(url).read()
+            if expected_format == 'json' :
+                raise ValueError('JSON')
+            if expected_format == 'parse_qs' :
+                response = cgi.parse_qs(response)
+            print type(response)
+            print response
+            return response
         except urllib2.HTTPError , e :
             if e.code == 400:
                 rval = ''
@@ -250,6 +245,27 @@ class FacebookHub(object):
                 except: 
                     raise
             raise
+        except:
+            raise
+        return access_token
+        
+            
+
+    def oauth_code__get_access_token( self , submitted_code=None , redirect_uri=None , scope=None ):
+        """Gets the access token from Facebook that corresponds with a code.  This uses urllib2 to open the url , so should be considered as blocking code."""
+        if submitted_code is None:
+            raise ValueError('must call with submitted_code')
+        if scope == None:
+            scope= self.app_scope
+        if redirect_uri == None:
+            redirect_uri= self.oauth_code_redirect_uri
+        url_access_token = self.oauth_code__url_access_token( submitted_code , redirect_uri=redirect_uri , scope=scope )
+        access_token = None
+        try:
+            response = self.api_proxy( url_access_token , expected_format='parse_qs' )
+            if 'access_token' not in response:
+                raise ValueError('invalid response')
+            access_token = response["access_token"][-1]
         except:
             raise
         return access_token
