@@ -4,7 +4,7 @@ from setuptools import setup
 def get_docs():
     result = []
     in_docs = False
-    f = open(os.path.join(os.path.dirname(__file__), 'facebook_utils.py'))
+    f = open(os.path.join(os.path.dirname(__file__), 'facebook_utils/facebook_utils.py'))
     try:
         for line in f:
             if in_docs:
