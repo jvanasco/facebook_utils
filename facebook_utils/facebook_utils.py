@@ -156,6 +156,7 @@ class ApiAuthError(ApiError):
     """
     Raised if there is an error with authentication
     """
+    pass
 
 
 def reformat_error(json_string):
@@ -273,7 +274,7 @@ class FacebookHub(object):
         try:
             response = self.api_proxy( url_access_token , expected_format='cgi.parse_qs' )
             if 'access_token' not in response:
-                raise ValueError('invalid response')
+                raise ApiError(message='invalid response')
             access_token = response["access_token"][-1]
         except:
             raise
