@@ -132,9 +132,10 @@ from time import time
 import urllib
 import urllib2
 import urlparse
-
-import simplejson as json
-
+try: 
+    import simplejson as json
+except ImportError: 
+    import json
 
 class ApiError( Exception ):
     """

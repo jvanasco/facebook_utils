@@ -1,5 +1,6 @@
 import os
 from setuptools import setup
+from setuptools import find_packages
 
 def get_docs():
     result = []
@@ -24,6 +25,8 @@ setup(
     version='0.16',
     url='http://github.com/jvanasco/facebook_utils',
     py_modules=['facebook_utils'],
+    packages=find_packages(),
+    include_package_data=True,
     description='simple utilites for facebook integration.',
     long_description=get_docs(),
     zip_safe=False,
