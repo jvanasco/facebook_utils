@@ -217,37 +217,46 @@ class FacebookHub(object):
             scope= self.app_scope
         return """https://graph.facebook.com/oauth/access_token?client_id=%(app_id)s&redirect_uri=%(redirect_uri)s&client_secret=%(client_secret)s&code=%(code)s""" % { 'app_id':self.app_id , "redirect_uri":urllib.quote( redirect_uri ) , 'client_secret':self.app_secret, 'code':submitted_code }
         
-    def api_proxy( self , url , expected_format='json'):
+    def api_proxy( self , url , post_data=None , expected_format='json.load' , is_delete=False ):
         try:
-            print url
-            response = urllib2.urlopen(url).read()
-            if expected_format == 'json' :
-                raise ValueError('JSON')
-            if expected_format == 'parse_qs' :
-                response = cgi.parse_qs(response)
-            print type(response)
-            print response
+            if post_data :
+                post_data_encoded = urllib.urlencode(post_data)
+                if is_delete:
+                    opener = urllib2.build_opener(urllib2.HTTPHandler)
+                    request = urllib2.Request(url,post_data)
+                    request.get_method = lambda: 'DELETE'
+                    response = opener.open(request)
+                else:
+                    response = urllib2.urlopen( url , post_data_encoded )
+            else:
+                response = urllib2.urlopen(url)
+            if expected_format == 'json.load' :
+                return json.load(response)
+            elif expected_format == 'cgi.parse_qs' :
+                response = cgi.parse_qs(response.read())
+            elif expected_format == 'urlparse.parse_qs' :
+                response = urlparse.parse_qs(response.read())
+            else:
+                raise ValueError("Unexpected Format: %s" % expected_format)
             return response
         except urllib2.HTTPError , e :
             if e.code == 400:
                 rval = ''
                 try:
-                    rval = e.read()
-                    rval = json.loads(rval)
+                    rval = json.loads(e.read())
                     if 'error' in rval : 
                         error = reformat_error( rval['error'] )
                         if error['type'] == 'OAuthException' :
                             raise ApiAuthError(**error)
                         raise ApiError(**error)
-                    raise RuntimeError()
+                    raise ApiError(message = 'I don\'t know how to handle this error (%s)' % rval , code=400 )
                 except json.JSONDecodeError :
-                    raise ApiError( message = 'Could not parse JSON from the error (%s)' % rval)
+                    raise ApiError( message = 'Could not parse JSON from the error (%s)' % rval , code=400 )
                 except: 
-                    raise
-            raise
+                    raise 
+            raise ApiError( message = 'Could not communicate with the API' , code=e.code )
         except:
             raise
-        return access_token
         
             
 
@@ -262,7 +271,7 @@ class FacebookHub(object):
         url_access_token = self.oauth_code__url_access_token( submitted_code , redirect_uri=redirect_uri , scope=scope )
         access_token = None
         try:
-            response = self.api_proxy( url_access_token , expected_format='parse_qs' )
+            response = self.api_proxy( url_access_token , expected_format='cgi.parse_qs' )
             if 'access_token' not in response:
                 raise ValueError('invalid response')
             access_token = response["access_token"][-1]
@@ -318,8 +327,8 @@ class FacebookHub(object):
             raise ValueError('must submit access_token')
         result= None
         try:
-            result = urllib2.urlopen( self.oauth__url_extend_access_token(access_token=access_token) ).read()
-            result = urlparse.parse_qs( result )
+            url = self.oauth__url_extend_access_token(access_token=access_token)
+            response = self.api_proxy( url , expected_format='urlparse.parse_qs' )
         except:
             raise
         return result
@@ -351,13 +360,15 @@ class FacebookHub(object):
             raise ValueError('must submit access_token')
         profile= None
         try:
+            url = None
             if not user :
-                if not action :
-                    profile = json.load(urllib2.urlopen( self.graph__url_me_for_access_token(access_token) ) )
-                else :
-                    profile = json.load(urllib2.urlopen( self.graph__url_user_for_access_token(access_token,action=action ) ) )
+                if action :
+                    url = self.graph__url_user_for_access_token(access_token,action=action )
+                else:
+                    url = self.graph__url_me_for_access_token(access_token)
             else :
-                profile = json.load(urllib2.urlopen( self.graph__url_user_for_access_token(access_token,user=user,action=action ) ) )
+                url = self.graph__url_user_for_access_token(access_token,user=user,action=action ) 
+            profile = self.api_proxy( url , expected_format='json.load' )
         except:
             raise
         return profile
@@ -377,10 +388,8 @@ class FacebookHub(object):
             'access_token' : access_token ,
             object_type_name : object_instance_url ,
         }
-        post_data = urllib.urlencode(post_data)
         try:
-            raw_data = urllib2.urlopen( url , post_data )
-            payload = json.load( raw_data )
+            payload = self.api_proxy( url , post_data , expected_format='json.load' )
             return payload
         except:
             raise
@@ -391,8 +400,7 @@ class FacebookHub(object):
             raise ValueError('must submit access_token , fb_app_namespace , fb_action_type_name' )
         url = "https://graph.facebook.com/me/%s:%s?access_token=%s" % ( fb_app_namespace , fb_action_type_name , access_token )
         try:
-            raw_data = urllib2.urlopen( url )
-            payload = json.load( raw_data )
+            payload = self.api_proxy( url , expected_format='json.load' )
             return payload
         except:
             raise
@@ -407,12 +415,7 @@ class FacebookHub(object):
         }
         post_data = urllib.urlencode(post_data)
         try:
-        
-            opener = urllib2.build_opener(urllib2.HTTPHandler)
-            request = urllib2.Request(url,post_data)
-            request.get_method = lambda: 'DELETE'
-            raw_data = opener.open(request)
-            payload = json.load( raw_data )
+            payload = self.api_proxy( url , post_data=post_data , expected_format='json.load' , is_delete=True )
             return payload
         except:
             raise
