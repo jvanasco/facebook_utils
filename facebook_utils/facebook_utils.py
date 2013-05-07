@@ -2,6 +2,8 @@ r"""
     facebook_utils
     ~~~~~~~~~~~~
 
+    v 0.18
+
     A collection of utilities for integrating user accounts with Facebook.com
     
     right now this handles oauth and graph operations
@@ -394,6 +396,8 @@ class FacebookHub(object):
                             raise ApiResponseError(message="Batched Graph request expects a list of dicts. Got a list, element not a dict.",response=response )
                         if not all (k in li for k in ('body','headers','code')):
                             raise ApiResponseError(message="Batched Graph response dict should contain 'body','headers','code'.", response=response )
+                        # the body is a json encoded string itself.  it was previously escaped, so unescape it!
+                        li['body'] = json.loads(li['body'])
                     
             elif expected_format == 'cgi.parse_qs' :
                 response = cgi.parse_qs(response.read())
