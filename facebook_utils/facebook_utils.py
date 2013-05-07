@@ -408,7 +408,15 @@ class FacebookHub(object):
             return response
         except json.JSONDecodeError , e :
             raise ApiError( message = 'Could not parse JSON from the error (%s)' % e , raised=e )
+        except httplib.BadStatusLine , e :
+            raise ApiError( message = 'Could not load the URL.  httplib.BadStatusLine (%s)' % e , raised=e )
+        except httplib.InvalidURL , e :
+            raise ApiError( message = 'Could not load the URL.  httplib.InvalidURL (%s)' % e , raised=e )
+        except httplib.HTTPException , e :
+            ## this MUST come after all other httplib exceptions as it is the base class.
+            raise ApiError( message = 'Could not load the URL.  httplib.HTTPException (%s)' % e , raised=e )
         except urllib2.HTTPError , e :
+            ## this MUST come before urllib2.URLError as that is the base class.
             error_data= e.read()
             if self.debug_error:
                 print "ERROR-------"
@@ -462,6 +470,8 @@ class FacebookHub(object):
                 except: 
                     raise 
             raise ApiError( message = 'Could not communicate with the API' , code=e.code , raised=e)
+        except urllib2.URLError , e :
+            raise ApiError( message = 'Could not load the URL.  urllib2.URLError This often comes from a timeout. (%s)' % e , raised=e )
         except Exception as e:
             if self.mask_unhandled_exceptions :
                 raise ApiUnhandledError( raised=e )

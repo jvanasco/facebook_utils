@@ -1,3 +1,13 @@
+0.19 (2013-05-7)
+------------------
+
+- catching the following exceptions:
+	httplib.BadStatusLine
+	httplib.InvalidUrl
+	urllib2.URLError
+- ensured correct ordering of exceptions caught
+
+
 0.18 (2013-05-7)
 ------------------
 
