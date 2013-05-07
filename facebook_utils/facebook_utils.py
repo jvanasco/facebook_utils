@@ -128,14 +128,16 @@ import cgi
 import datetime
 import hashlib
 import hmac
-from time import time
-import urllib
-import urllib2
-import urlparse
 try: 
     import simplejson as json
 except ImportError: 
     import json
+import urllib
+import urllib2
+import urlparse
+from time import time
+import types
+
 
 class ApiError( Exception ):
     """
@@ -144,11 +146,15 @@ class ApiError( Exception ):
     code = None
     type = None
     message = None
+    response = None
+    raised = None 
 
-    def __init__( self , code=None, type=None, message=None ):
+    def __init__( self , code=None, type=None, message=None , response=None , raised=None):
         self.code = code
         self.type = type
         self.message = message
+        self.response = response
+        self.raised = raised
         
     def __str__( self ):
         return "ApiError: %s | %s | %s" % ( self.code , self.type , self.message )
@@ -159,12 +165,62 @@ class ApiAuthError(ApiError):
     """
     pass
 
+class ApiAuthExpiredError(ApiAuthError):
+    """
+    Raised if there is an error with authentication due to expiry
+    """
+    pass
 
-def reformat_error(json_string):
-    rval = { 'message':None , 'type': None , 'code': None }
+class ApiApplicationError(ApiError):
+    """
+    Raised if there is an error with the application setup
+    """
+    pass
+    
+class ApiResponseError(ApiError):
+    """
+    Raised if the response is weird
+    """
+    pass
+    
+class ApiRuntimeError(ApiError):
+    """
+    Raised if there is an error on the application when run
+    """
+    pass
+
+class ApiRuntimeVerirficationFormatError(ApiRuntimeError):
+    """
+    Raised if there is an error on the applicaiton when run : Invalid verification code format
+    """
+    pass
+
+class ApiRuntimeGrantError(ApiRuntimeError):
+    """
+    Raised if there is an error on the application when run : Invalid verification code format
+    """
+    pass
+
+class ApiRuntimeScopeError(ApiRuntimeError):
+    """
+    Raised if there is an error on the application when run : Invalid verification code format
+    """
+    pass
+
+class ApiRuntimeGraphMethodError(ApiError):
+    """
+    Raised if there is an error on the application when run : Invalid graph method
+    """
+    pass
+
+
+def reformat_error( json_string , raised=None ):
+    rval = { 'message':None , 'type': None , 'code': None , 'raised' : None }
     for k in rval.keys():
         if k in json_string:
             rval[k] = json_string[k]
+    if raised is not None :
+        rval['raised'] = raised
     return rval
 
 
@@ -183,9 +239,10 @@ class FacebookHub(object):
     app_domain= None
     oauth_code_redirect_uri= None
     oauth_token_redirect_uri= None
+    debug_error= False
 
 
-    def __init__( self , app_id=None , app_secret=None , app_scope=None , app_domain=None , oauth_code_redirect_uri=None , oauth_token_redirect_uri=None ):
+    def __init__( self , app_id=None , app_secret=None , app_scope=None , app_domain=None , oauth_code_redirect_uri=None , oauth_token_redirect_uri=None , debug_error=False ):
         """Initialize the FacebookHub object with some variables.  app_id and app_secret are required."""
         if app_id is None or app_secret is None:
             raise ValueError("Must initialize FacebookHub() with an app_id and an app_secret")
@@ -195,6 +252,7 @@ class FacebookHub(object):
         self.app_domain= app_domain
         self.oauth_code_redirect_uri = oauth_code_redirect_uri
         self.oauth_token_redirect_uri= oauth_token_redirect_uri
+        self.debug_error= debug_error
 
 
     def oauth_code__url_dialog( self, redirect_uri=None , scope=None ):
@@ -218,6 +276,7 @@ class FacebookHub(object):
         if scope == None:
             scope= self.app_scope
         return """https://graph.facebook.com/oauth/access_token?client_id=%(app_id)s&redirect_uri=%(redirect_uri)s&client_secret=%(client_secret)s&code=%(code)s""" % { 'app_id':self.app_id , "redirect_uri":urllib.quote( redirect_uri ) , 'client_secret':self.app_secret, 'code':submitted_code }
+
         
     def api_proxy( self , url , post_data=None , expected_format='json.load' , is_delete=False ):
         try:
@@ -233,7 +292,17 @@ class FacebookHub(object):
             else:
                 response = urllib2.urlopen(url)
             if expected_format == 'json.load' :
-                return json.load(response)
+                response = response.read()
+                response = json.loads(response)
+                if ( post_data is not None ) and isinstance( post_data , types.DictType ) and ( 'batch' in post_data ):
+                    if not isinstance( response , types.ListType ):
+                        raise ApiResponseError(message="Batched Graph request expects a list of dicts. Did not get a list.",response=response )
+                    for li in response :
+                        if not isinstance( li , types.DictType ):
+                            raise ApiResponseError(message="Batched Graph request expects a list of dicts. Got a list, element not a dict.",response=response )
+                        if not all (k in li for k in ('body','headers','code')):
+                            raise ApiResponseError(message="Batched Graph response dict should contain 'body','headers','code'.", response=response )
+                    
             elif expected_format == 'cgi.parse_qs' :
                 response = cgi.parse_qs(response.read())
             elif expected_format == 'urlparse.parse_qs' :
@@ -241,22 +310,62 @@ class FacebookHub(object):
             else:
                 raise ValueError("Unexpected Format: %s" % expected_format)
             return response
+        except json.JSONDecodeError , e :
+            raise ApiError( message = 'Could not parse JSON from the error (%s)' % e , raised=e )
         except urllib2.HTTPError , e :
+            error_data= e.read()
+            if self.debug_error:
+                print "ERROR-------"
+                print error_data
+                print e
+                print e.code 
             if e.code == 400:
                 rval = ''
                 try:
-                    rval = json.loads(e.read())
+                    rval = json.loads(error_data)
                     if 'error' in rval : 
-                        error = reformat_error( rval['error'] )
-                        if error['type'] == 'OAuthException' :
+                        error = reformat_error( rval['error'] , e )
+                        if ( 'code' in error ) and error['code']:
+                            if error['code'] == 1 :
+                                # Error validating client secret
+                                raise ApiApplicationError(**error)
+                            elif error['code'] == 101 :
+                                # Error validating application. Invalid application ID
+                                raise ApiApplicationError(**error)
+                            elif error['code'] == 100 :
+                                if ( 'type' in error ) and error['type'] :
+                                    if error['type'] == 'GraphMethodException' :
+                                        raise ApiRuntimeGraphMethodError(**error)
+                                    
+                                if ( 'message' in error ) and error['message']:
+                                    if error['message'][:32] == 'Invalid verification code format' :
+                                        raise ApiRuntimeVerirficationFormatError(**error)
+                                    elif error['message'][:19] == 'Invalid grant_type:' :
+                                        raise ApiRuntimeGrantError(**error)
+                                    elif error['message'][:18] == 'Unsupported scope:' :
+                                        raise ApiRuntimeScopeError(**error)
+                                    elif error['message'][:18] == 'Unsupported scope:' :
+                                        raise ApiRuntimeScopeError(**error)
+
+                            elif error['code'] == 104 :
+                                raise ApiAuthError(**error)
+                                
+                        if ( 'message' in error ) and error['message']:
+                            if error['message'][:63] == 'Error validating access token: Session has expired at unix time' :
+                                raise ApiAuthExpiredError(**error)
+                            elif error['message'][:26] == 'Invalid OAuth access token' :
+                                raise ApiAuthError(**error)
+                            elif error['message'][:29] == 'Error validating access token':
+                                raise ApiAuthError(**error)
+                        if ( 'type' in error ) and ( error['type'] == 'OAuthException' ) :
                             raise ApiAuthError(**error)
                         raise ApiError(**error)
                     raise ApiError(message = 'I don\'t know how to handle this error (%s)' % rval , code=400 )
                 except json.JSONDecodeError :
-                    raise ApiError( message = 'Could not parse JSON from the error (%s)' % rval , code=400 )
+                    raise ApiError( message = 'Could not parse JSON from the error (%s)' % rval , code=400 , raised=e)
                 except: 
                     raise 
-            raise ApiError( message = 'Could not communicate with the API' , code=e.code )
+            raise ApiError( message = 'Could not communicate with the API' , code=e.code , raised=e)
         except:
             raise
         
@@ -327,13 +436,12 @@ class FacebookHub(object):
         """ see oauth__url_extend_access_token  """
         if access_token is None or not access_token :
             raise ValueError('must submit access_token')
-        result= None
         try:
             url = self.oauth__url_extend_access_token(access_token=access_token)
             response = self.api_proxy( url , expected_format='urlparse.parse_qs' )
         except:
             raise
-        return result
+        return response
 
 
     def graph__url_me( self , access_token ):

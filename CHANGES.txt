@@ -1,3 +1,30 @@
+0.17 (2013-05-7)
+------------------
+- added the following exception clases ( inheritance shown )
+
+	ApiError
+		ApiAuthError
+			ApiAuthExpiredError
+		ApiApplicationError
+		ApiResponseError
+		ApiRuntimeError
+			ApiRuntimeVerirficationFormatError
+			ApiRuntimeGrantError
+			ApiRuntimeScopeError
+			ApiRuntimeGraphMethodError
+
+- extended exceptions to include the originally raised error ( `raised` ) and the the `response` if available
+
+- added format checking to the response during batch requests
+
+- extended unit tests to ensure everything works.  they could be better
+
+- consolidated the parsing of the response into the api_proxy.  facebook's graph has different response types and behaviors.  this helps consolidate it for developers.
+
+
+
+
+
 0.16 (2013-05-2)
 ------------------
 - added AuthException to better catch auth failures
