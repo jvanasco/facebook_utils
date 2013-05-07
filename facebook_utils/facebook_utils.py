@@ -157,8 +157,23 @@ r"""
     
     the `api_proxy` will catch *most* errors.  since this is in development, 
     i'm raising uncaught exceptions.  There will be a future "ApiUnhandledError" 
-        
     
+    
+    Unit Tests
+    ===========
+    
+    Unit Tests require the following environment vars to be set:
+    
+        PYTHON_FB_UTILS_APP_ID
+        PYTHON_FB_UTILS_APP_SECRET
+        PYTHON_FB_UTILS_APP_SCOPE
+        PYTHON_FB_UTILS_ACCESS_TOKEN
+        
+            export PYTHON_FB_UTILS_APP_ID="app_id_from_facebook.com"
+            export PYTHON_FB_UTILS_APP_SECRET="app_secret_from_facebook.com"
+            export PYTHON_FB_UTILS_APP_SCOPE="email,user_activities,user_status,read_stream"
+            export PYTHON_FB_UTILS_ACCESS_TOKEN="from_API_operations"
+        
     ToDo
     =======
     - I think in the future, the 'dicts' that come back should be cast into a 'response' object, and there will be some metadata attached to it.
