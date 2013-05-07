@@ -22,7 +22,7 @@ setup(
     name='facebook_utils',
     author='Jonathan Vanasco',
     author_email='jonathan@findmeon.com',
-    version='0.16',
+    version='0.17',
     url='http://github.com/jvanasco/facebook_utils',
     py_modules=['facebook_utils'],
     packages=find_packages(),

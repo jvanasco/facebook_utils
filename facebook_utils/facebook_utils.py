@@ -2,9 +2,9 @@ r"""
     facebook_utils
     ~~~~~~~~~~~~
 
-    A collection of utilities for integrating user accoutns with Facebook.com
+    A collection of utilities for integrating user accounts with Facebook.com
     
-    right now this handles oauth , but will likely expand
+    right now this handles oauth and graph operations
     
     Purpose
     =======
@@ -22,11 +22,11 @@ r"""
     
     This was originally built/intended for use under the Pyramid environment
     
-    calling FacebookPyramid() will create a new object that 
-    subclasses FacebookHub() objects, using  default settings 
+    calling `FacebookPyramid()` will create a new object that 
+    subclasses `FacebookHub()` objects, using  default settings 
     from your .ini and pulling variables from 'request' as needed.
     
-    facebook_utils.FacebookHub() can be used directly - however it will not 
+    `facebook_utils.FacebookHub()` can be used directly - however it will not 
     pull the appropriate settings from the .ini or request.
     
     
@@ -63,8 +63,7 @@ r"""
     Notes
     =====
     Most methods will let you override the 'scope' and 'request_uri'.  This 
-    shouldn't really be necessary and will probable be deprecated.
-    
+    shouldn't really be necessary and will probably be deprecated.
     
     
     
@@ -118,8 +117,56 @@ r"""
                     Connect with <strong>Facebook</strong>
                 </a>
     
+    Graph Operations
+    ================
+    
+    Every `hub` object has an `api_proxy` method, which can be used to
+    centralize communication to the Facebook API
+    
+    Facebook's API isn't very 'standardized' across the board. Some endpoints 
+    return json data, others return urlquoted data.  `api_proxy` doesn't care.
+    it returns a dict from every endpoint , and does the conversion for you.
+    
+    The `api_proxy` defaults to a json load.  certain api calls will pass in 
+    a different `expected_format` argument.  The proxy will also handle 'batch'
+    style graph requests.
+    
+    When the api_proxy encounters an error, it returns `ApiError` or a more
+    contextual subclass of the that exception class.
 
-    :copyright: 2012 by Jonathan Vanasco
+    The current exception class inheritance is:
+    
+        ApiError
+            ApiAuthError
+                ApiAuthExpiredError
+            ApiApplicationError
+            ApiResponseError
+            ApiRuntimeError
+                ApiRuntimeVerirficationFormatError
+                ApiRuntimeGrantError
+                ApiRuntimeScopeError
+                ApiRuntimeGraphMethodError
+            ApiUnhandledError
+
+    `ApiError` instances contain :
+        code ( facebook specific, not http code )
+        type ( as dictacted by facebook )
+        message ( possibly dictated by facebook )
+        raised ( the trapped error that raised this, if available )
+        response ( the repsonse in error, if available )
+    
+    the `api_proxy` will catch *most* errors.  since this is in development, 
+    i'm raising uncaught exceptions.  There will be a future "ApiUnhandledError" 
+        
+    
+    ToDo
+    =======
+    - I think in the future, the 'dicts' that come back should be cast into a 'response' object, and there will be some metadata attached to it.
+
+    
+    
+
+    :copyright: 2012-2013 by Jonathan Vanasco
     license: BSD
 """
 
@@ -213,6 +260,34 @@ class ApiRuntimeGraphMethodError(ApiError):
     """
     pass
 
+class ApiUnhandledError(ApiError):
+    """
+    Raised if something bad happened, so you only have to track one error.
+    Note that this inherits from ApiError - so this should be the first thing you catch
+
+    Good - raises ApiUnhandledError
+        try:
+            raise ApiUnhandledError()
+        except ApiUnhandledError , e :
+            print "raised ApiUnhandledError"
+        except ApiError , e :
+            print "raised ApiError"
+
+    Bad - raises ApiError
+        try:
+            raise ApiUnhandledError()
+        except ApiError , e :
+            print "raised ApiError"
+        except ApiUnhandledError , e :
+            print "raised ApiUnhandledError"
+    
+    """
+    pass
+
+    def __str__( self ):
+        return "ApiError: %s " % ( self.raised )
+
+
 
 def reformat_error( json_string , raised=None ):
     rval = { 'message':None , 'type': None , 'code': None , 'raised' : None }
@@ -240,19 +315,21 @@ class FacebookHub(object):
     oauth_code_redirect_uri= None
     oauth_token_redirect_uri= None
     debug_error= False
+    mask_unhandled_exceptions= False
 
 
-    def __init__( self , app_id=None , app_secret=None , app_scope=None , app_domain=None , oauth_code_redirect_uri=None , oauth_token_redirect_uri=None , debug_error=False ):
+    def __init__( self , app_id=None , app_secret=None , app_scope=None , app_domain=None , oauth_code_redirect_uri=None , oauth_token_redirect_uri=None , debug_error=False , mask_unhandled_exceptions=False ):
         """Initialize the FacebookHub object with some variables.  app_id and app_secret are required."""
         if app_id is None or app_secret is None:
             raise ValueError("Must initialize FacebookHub() with an app_id and an app_secret")
-        self.app_id= app_id
-        self.app_secret= app_secret
-        self.app_scope= app_scope
-        self.app_domain= app_domain
+        self.app_id = app_id
+        self.app_secret = app_secret
+        self.app_scope = app_scope
+        self.app_domain = app_domain
         self.oauth_code_redirect_uri = oauth_code_redirect_uri
-        self.oauth_token_redirect_uri= oauth_token_redirect_uri
-        self.debug_error= debug_error
+        self.oauth_token_redirect_uri = oauth_token_redirect_uri
+        self.debug_error = debug_error
+        self.mask_unhandled_exceptions = mask_unhandled_exceptions
 
 
     def oauth_code__url_dialog( self, redirect_uri=None , scope=None ):
@@ -366,8 +443,10 @@ class FacebookHub(object):
                 except: 
                     raise 
             raise ApiError( message = 'Could not communicate with the API' , code=e.code , raised=e)
-        except:
-            raise
+        except Exception as e:
+            if self.mask_unhandled_exceptions :
+                raise ApiUnhandledError( raised=e )
+            raise e
         
             
 

@@ -12,6 +12,7 @@
 			ApiRuntimeGrantError
 			ApiRuntimeScopeError
 			ApiRuntimeGraphMethodError
+		ApiUnhandledError
 
 - extended exceptions to include the originally raised error ( `raised` ) and the the `response` if available
 
@@ -20,6 +21,12 @@
 - extended unit tests to ensure everything works.  they could be better
 
 - consolidated the parsing of the response into the api_proxy.  facebook's graph has different response types and behaviors.  this helps consolidate it for developers.
+
+- added `mask_unhandled_exceptions` kwarg to hub init.
+	1. this defaults to False
+	2. this is just testing.  please don't rely on it. it could go away.
+	when set to True, it wraps uncaught exceptions in an ApiUnhandledError exception.  This allows you to only care about pass/fail if needed
+
 
 
 
