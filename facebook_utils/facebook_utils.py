@@ -2,7 +2,7 @@ r"""
     facebook_utils
     ~~~~~~~~~~~~
 
-    v 0.18
+    v 0.20.0
 
     A collection of utilities for integrating user accounts with Facebook.com
     
@@ -197,10 +197,11 @@ try:
 except ImportError: 
     import json
 import urllib
-import urllib2
 import urlparse
 from time import time
 import types
+
+import requests
 
 
 class ApiError( Exception ):
@@ -373,114 +374,103 @@ class FacebookHub(object):
 
         
     def api_proxy( self , url , post_data=None , expected_format='json.load' , is_delete=False ):
+        response = None
+        response_content = None
         try:
-            if post_data :
+            if not post_data :
+                # normal get
+                response = requests.get( url )
+            else:
+                # encode the data for post/delete
                 post_data_encoded = urllib.urlencode(post_data)
                 if is_delete:
-                    opener = urllib2.build_opener(urllib2.HTTPHandler)
-                    request = urllib2.Request(url,post_data)
-                    request.get_method = lambda: 'DELETE'
-                    response = opener.open(request)
+                    response = requests.delete( url , data=post_data_encoded )
                 else:
-                    response = urllib2.urlopen( url , post_data_encoded )
-            else:
-                response = urllib2.urlopen(url)
-            if expected_format == 'json.load' :
-                response = response.read()
-                response = json.loads(response)
-                if ( post_data is not None ) and isinstance( post_data , types.DictType ) and ( 'batch' in post_data ):
-                    if not isinstance( response , types.ListType ):
-                        raise ApiResponseError(message="Batched Graph request expects a list of dicts. Did not get a list.",response=response )
-                    for li in response :
-                        if not isinstance( li , types.DictType ):
-                            raise ApiResponseError(message="Batched Graph request expects a list of dicts. Got a list, element not a dict.",response=response )
-                        if not all (k in li for k in ('body','headers','code')):
-                            raise ApiResponseError(message="Batched Graph response dict should contain 'body','headers','code'.", response=response )
-                        # the body is a json encoded string itself.  it was previously escaped, so unescape it!
-                        li['body'] = json.loads(li['body'])
+                    response = requests.post( url , data=post_data_encoded )
+            response_content = response.text
+            if response.status_code == 200 :
+                if expected_format == 'json.load' :
+                    response_content = json.loads(response_content)
+                    if ( post_data is not None ) and isinstance( post_data , types.DictType ) and ( 'batch' in post_data ):
+                        if not isinstance( response_content , types.ListType ):
+                            raise ApiResponseError(message="Batched Graph request expects a list of dicts. Did not get a list.",response=response_content )
+                        for li in response_content :
+                            if not isinstance( li , types.DictType ):
+                                raise ApiResponseError(message="Batched Graph request expects a list of dicts. Got a list, element not a dict.",response=response_content )
+                            if not all (k in li for k in ('body','headers','code')):
+                                raise ApiResponseError(message="Batched Graph response dict should contain 'body','headers','code'.", response=response_content )
+                            # the body is a json encoded string itself.  it was previously escaped, so unescape it!
+                            li['body'] = json.loads(li['body'])
                     
-            elif expected_format == 'cgi.parse_qs' :
-                response = cgi.parse_qs(response.read())
-            elif expected_format == 'urlparse.parse_qs' :
-                response = urlparse.parse_qs(response.read())
+                elif expected_format == 'cgi.parse_qs' :
+                    response_content = cgi.parse_qs(response_content)
+                elif expected_format == 'urlparse.parse_qs' :
+                    response_content = urlparse.parse_qs(response_content)
+                else:
+                    raise ValueError("Unexpected Format: %s" % expected_format)
             else:
-                raise ValueError("Unexpected Format: %s" % expected_format)
-            return response
+                if response.status_code == 400:
+                    rval = ''
+                    try:
+                        rval = json.loads(response_content)
+                        if 'error' in rval : 
+                            error = reformat_error( rval['error'] )
+                            if ( 'code' in error ) and error['code']:
+                                if error['code'] == 1 :
+                                    # Error validating client secret
+                                    raise ApiApplicationError(**error)
+                                elif error['code'] == 101 :
+                                    # Error validating application. Invalid application ID
+                                    raise ApiApplicationError(**error)
+                                elif error['code'] == 100 :
+                                    if ( 'type' in error ) and error['type'] :
+                                        if error['type'] == 'GraphMethodException' :
+                                            raise ApiRuntimeGraphMethodError(**error)
+                                    
+                                    if ( 'message' in error ) and error['message']:
+                                        if error['message'][:32] == 'Invalid verification code format' :
+                                            raise ApiRuntimeVerirficationFormatError(**error)
+                                        elif error['message'][:19] == 'Invalid grant_type:' :
+                                            raise ApiRuntimeGrantError(**error)
+                                        elif error['message'][:18] == 'Unsupported scope:' :
+                                            raise ApiRuntimeScopeError(**error)
+                                        elif error['message'][:18] == 'Unsupported scope:' :
+                                            raise ApiRuntimeScopeError(**error)
+
+                                elif error['code'] == 104 :
+                                    raise ApiAuthError(**error)
+                                
+                            if ( 'message' in error ) and error['message']:
+                                if error['message'][:63] == 'Error validating access token: Session has expired at unix time' :
+                                    raise ApiAuthExpiredError(**error)
+                                elif error['message'][:26] == 'Invalid OAuth access token' :
+                                    raise ApiAuthError(**error)
+                                elif error['message'][:29] == 'Error validating access token':
+                                    raise ApiAuthError(**error)
+                            if ( 'type' in error ) and ( error['type'] == 'OAuthException' ) :
+                                raise ApiAuthError(**error)
+                            raise ApiError(**error)
+                        raise ApiError(message = 'I don\'t know how to handle this error (%s)' % rval , code=400 )
+                    except json.JSONDecodeError :
+                        raise ApiError( message = 'Could not parse JSON from the error (%s)' % rval , code=400 , raised=e)
+                    except: 
+                        raise 
+                raise ApiError( message = 'Could not communicate with the API' , code=r.status_code )
+
+                
+                
+            return response_content
         except json.JSONDecodeError , e :
             raise ApiError( message = 'Could not parse JSON from the error (%s)' % e , raised=e )
-        except httplib.BadStatusLine , e :
-            raise ApiError( message = 'Could not load the URL.  httplib.BadStatusLine (%s)' % e , raised=e )
-        except httplib.InvalidURL , e :
-            raise ApiError( message = 'Could not load the URL.  httplib.InvalidURL (%s)' % e , raised=e )
-        except httplib.HTTPException , e :
-            ## this MUST come after all other httplib exceptions as it is the base class.
-            raise ApiError( message = 'Could not load the URL.  httplib.HTTPException (%s)' % e , raised=e )
-        except urllib2.HTTPError , e :
-            ## this MUST come before urllib2.URLError as that is the base class.
-            error_data= e.read()
-            if self.debug_error:
-                print "ERROR-------"
-                print error_data
-                print e
-                print e.code 
-            if e.code == 400:
-                rval = ''
-                try:
-                    rval = json.loads(error_data)
-                    if 'error' in rval : 
-                        error = reformat_error( rval['error'] , e )
-                        if ( 'code' in error ) and error['code']:
-                            if error['code'] == 1 :
-                                # Error validating client secret
-                                raise ApiApplicationError(**error)
-                            elif error['code'] == 101 :
-                                # Error validating application. Invalid application ID
-                                raise ApiApplicationError(**error)
-                            elif error['code'] == 100 :
-                                if ( 'type' in error ) and error['type'] :
-                                    if error['type'] == 'GraphMethodException' :
-                                        raise ApiRuntimeGraphMethodError(**error)
-                                    
-                                if ( 'message' in error ) and error['message']:
-                                    if error['message'][:32] == 'Invalid verification code format' :
-                                        raise ApiRuntimeVerirficationFormatError(**error)
-                                    elif error['message'][:19] == 'Invalid grant_type:' :
-                                        raise ApiRuntimeGrantError(**error)
-                                    elif error['message'][:18] == 'Unsupported scope:' :
-                                        raise ApiRuntimeScopeError(**error)
-                                    elif error['message'][:18] == 'Unsupported scope:' :
-                                        raise ApiRuntimeScopeError(**error)
-
-                            elif error['code'] == 104 :
-                                raise ApiAuthError(**error)
-                                
-                        if ( 'message' in error ) and error['message']:
-                            if error['message'][:63] == 'Error validating access token: Session has expired at unix time' :
-                                raise ApiAuthExpiredError(**error)
-                            elif error['message'][:26] == 'Invalid OAuth access token' :
-                                raise ApiAuthError(**error)
-                            elif error['message'][:29] == 'Error validating access token':
-                                raise ApiAuthError(**error)
-                        if ( 'type' in error ) and ( error['type'] == 'OAuthException' ) :
-                            raise ApiAuthError(**error)
-                        raise ApiError(**error)
-                    raise ApiError(message = 'I don\'t know how to handle this error (%s)' % rval , code=400 )
-                except json.JSONDecodeError :
-                    raise ApiError( message = 'Could not parse JSON from the error (%s)' % rval , code=400 , raised=e)
-                except: 
-                    raise 
-            raise ApiError( message = 'Could not communicate with the API' , code=e.code , raised=e)
-        except urllib2.URLError , e :
-            raise ApiError( message = 'Could not load the URL.  urllib2.URLError This often comes from a timeout. (%s)' % e , raised=e )
         except Exception as e:
             if self.mask_unhandled_exceptions :
                 raise ApiUnhandledError( raised=e )
-            raise e
+            raise
         
             
 
     def oauth_code__get_access_token( self , submitted_code=None , redirect_uri=None , scope=None ):
-        """Gets the access token from Facebook that corresponds with a code.  This uses urllib2 to open the url , so should be considered as blocking code."""
+        """Gets the access token from Facebook that corresponds with a code.  This uses `requests` to open the url , so should be considered as blocking code."""
         if submitted_code is None:
             raise ValueError('must call with submitted_code')
         if scope == None:
@@ -500,7 +490,7 @@ class FacebookHub(object):
         
         
     def oauth_code__get_access_token_and_profile( self , submitted_code=None , redirect_uri=None , scope=None  ):
-        """Gets the access token AND a profile from Facebook that corresponds with a code.  This method wraps a call to `oauth_code__get_access_token`, then wraps `graph__get_profile_for_access_token` which opens a json object at the url returned by `graph__url_me_for_access_token`.  This is a convenince method, since most people want to do that ( at least on the initial Facebook auth.  This wraps methods which use urllib2 to open urls, so should be considered as blocking code."""
+        """Gets the access token AND a profile from Facebook that corresponds with a code.  This method wraps a call to `oauth_code__get_access_token`, then wraps `graph__get_profile_for_access_token` which opens a json object at the url returned by `graph__url_me_for_access_token`.  This is a convenince method, since most people want to do that ( at least on the initial Facebook auth.  This wraps methods which use `requests` to open urls, so should be considered as blocking code."""
         if submitted_code is None:
             raise ValueError('must submit a code')
         ( access_token , profile ) = ( None , None )
@@ -573,7 +563,7 @@ class FacebookHub(object):
 
 
     def graph__get_profile_for_access_token( self , access_token=None  , user=None , action=None ):
-        """Grabs a profile for a user, corresponding to a profile , from Facebook.  This uses urllib2 to open the url , so should be considered as blocking code."""
+        """Grabs a profile for a user, corresponding to a profile , from Facebook.  This uses `requests` to open the url , so should be considered as blocking code."""
         if access_token is None:
             raise ValueError('must submit access_token')
         profile= None
