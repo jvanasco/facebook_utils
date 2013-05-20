@@ -334,9 +334,10 @@ class FacebookHub(object):
     oauth_token_redirect_uri= None
     debug_error= False
     mask_unhandled_exceptions= False
+    ssl_verify = True
 
 
-    def __init__( self , app_id=None , app_secret=None , app_scope=None , app_domain=None , oauth_code_redirect_uri=None , oauth_token_redirect_uri=None , debug_error=False , mask_unhandled_exceptions=False ):
+    def __init__( self , app_id=None , app_secret=None , app_scope=None , app_domain=None , oauth_code_redirect_uri=None , oauth_token_redirect_uri=None , debug_error=False , mask_unhandled_exceptions=False , ssl_verify=True ):
         """Initialize the FacebookHub object with some variables.  app_id and app_secret are required."""
         if app_id is None or app_secret is None:
             raise ValueError("Must initialize FacebookHub() with an app_id and an app_secret")
@@ -348,6 +349,7 @@ class FacebookHub(object):
         self.oauth_token_redirect_uri = oauth_token_redirect_uri
         self.debug_error = debug_error
         self.mask_unhandled_exceptions = mask_unhandled_exceptions
+        self.ssl_verify = ssl_verify
 
 
     def oauth_code__url_dialog( self, redirect_uri=None , scope=None ):
@@ -373,20 +375,20 @@ class FacebookHub(object):
         return """https://graph.facebook.com/oauth/access_token?client_id=%(app_id)s&redirect_uri=%(redirect_uri)s&client_secret=%(client_secret)s&code=%(code)s""" % { 'app_id':self.app_id , "redirect_uri":urllib.quote( redirect_uri ) , 'client_secret':self.app_secret, 'code':submitted_code }
 
         
-    def api_proxy( self , url , post_data=None , expected_format='json.load' , is_delete=False ):
+    def api_proxy( self , url , post_data=None , expected_format='json.load' , is_delete=False , ssl_verify=None ):
         response = None
         response_content = None
+        if ssl_verify is None :
+            ssl_verify = self.ssl_verify
         try:
             if not post_data :
                 # normal get
-                response = requests.get( url )
+                response = requests.get( url , verify=ssl_verify )
             else:
-                # encode the data for post/delete
-                post_data_encoded = urllib.urlencode(post_data)
                 if is_delete:
-                    response = requests.delete( url , data=post_data_encoded )
+                    response = requests.delete( url , data=post_data , verify=ssl_verify )
                 else:
-                    response = requests.post( url , data=post_data_encoded )
+                    response = requests.post( url , data=post_data , verify=ssl_verify )
             response_content = response.text
             if response.status_code == 200 :
                 if expected_format == 'json.load' :
@@ -621,7 +623,6 @@ class FacebookHub(object):
         post_data = {
             'access_token' : access_token ,
         }
-        post_data = urllib.urlencode(post_data)
         try:
             payload = self.api_proxy( url , post_data=post_data , expected_format='json.load' , is_delete=True )
             return payload
@@ -692,7 +693,7 @@ class FacebookHub(object):
 
 class FacebookPyramid(FacebookHub):
 
-    def __init__( self, request , app_id=None , app_secret=None , app_scope=None , app_domain=None , oauth_code_redirect_uri=None , oauth_token_redirect_uri=None ):
+    def __init__( self, request , app_id=None , app_secret=None , app_scope=None , app_domain=None , oauth_code_redirect_uri=None , oauth_token_redirect_uri=None , ssl_verify=None ):
         """Creates a new FacebookHub object, sets it up with Pyramid Config vars, and then proxies other functions into it"""
         self.request= request
         if app_id is None and 'facebook.app.id' in request.registry.settings :
@@ -707,7 +708,9 @@ class FacebookPyramid(FacebookHub):
             oauth_code_redirect_uri = request.registry.settings['facebook.app.oauth_code_redirect_uri']
         if oauth_token_redirect_uri is None and 'facebook.app.oauth_token_redirect_uri' in request.registry.settings :
             oauth_token_redirect_uri = request.registry.settings['facebook.app.oauth_token_redirect_uri']
-        FacebookHub.__init__( self , app_id=app_id , app_secret=app_secret , app_scope=app_scope , app_domain=app_domain , oauth_code_redirect_uri=oauth_code_redirect_uri , oauth_token_redirect_uri=oauth_token_redirect_uri )
+        if ssl_verify is None and 'facebook.app.ssl_verify' in request.registry.settings :
+            ssl_verify = request.registry.settings['facebook.app.ssl_verify']
+        FacebookHub.__init__( self , app_id=app_id , app_secret=app_secret , app_scope=app_scope , app_domain=app_domain , oauth_code_redirect_uri=oauth_code_redirect_uri , oauth_token_redirect_uri=oauth_token_redirect_uri , ssl_verify=ssl_verify )
         
     def oauth_code__url_access_token( self, submitted_code=None , redirect_uri=None , scope=None ):
         if submitted_code is None:

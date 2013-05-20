@@ -1,3 +1,8 @@
+0.20.1 (2013-05-21)
+------------------
+- added in ssl_verify param to __init__ and api_proxy calls
+
+
 0.20.0 (2013-05-20)
 ------------------
 
