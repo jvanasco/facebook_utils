@@ -22,7 +22,7 @@ setup(
     name='facebook_utils',
     author='Jonathan Vanasco',
     author_email='jonathan@findmeon.com',
-    version='0.20.0',
+    version='0.20.1',
     url='http://github.com/jvanasco/facebook_utils',
     packages=find_packages(),
     include_package_data=True,
