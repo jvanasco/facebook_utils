@@ -385,13 +385,17 @@ class FacebookHub(object):
                 # normal get
                 response = requests.get( url , verify=ssl_verify )
             else:
+                if post_data :
+                    if 'batch' in post_data :
+                        if isinstance( post_data['batch'] , types.ListType ):
+                            post_data['batch'] = json.dumps( post_data['batch'] )
                 if is_delete:
                     response = requests.delete( url , data=post_data , verify=ssl_verify )
                 else:
                     response = requests.post( url , data=post_data , verify=ssl_verify )
             response_content = response.text
             if response.status_code == 200 :
-                if expected_format == 'json.load' :
+                if expected_format in ( 'json.load' , 'json.loads' ) :
                     response_content = json.loads(response_content)
                     if ( post_data is not None ) and isinstance( post_data , types.DictType ) and ( 'batch' in post_data ):
                         if not isinstance( response_content , types.ListType ):
@@ -411,6 +415,8 @@ class FacebookHub(object):
                 else:
                     raise ValueError("Unexpected Format: %s" % expected_format)
             else:
+                print response
+                print response.__dict__
                 if response.status_code == 400:
                     rval = ''
                     try:

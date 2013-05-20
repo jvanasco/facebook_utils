@@ -1,3 +1,8 @@
+0.20.2 (2013-05-21)
+------------------
+- updated batch process logic to be backwards compatible.
+
+
 0.20.1 (2013-05-21)
 ------------------
 - added in ssl_verify param to __init__ and api_proxy calls
