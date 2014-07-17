@@ -22,12 +22,13 @@ setup(
     name='facebook_utils',
     author='Jonathan Vanasco',
     author_email='jonathan@findmeon.com',
-    version='0.20.2',
+    version='0.20.3',
     url='http://github.com/jvanasco/facebook_utils',
-    packages=find_packages(),
-    include_package_data=True,
     description='simple utilites for facebook integration.',
     long_description=get_docs(),
+    license="MIT",
+    packages=find_packages(),
+    include_package_data=True,
     zip_safe=False,
     install_requires=[
         'requests>=1.2'
