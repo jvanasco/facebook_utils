@@ -362,8 +362,8 @@ class FacebookHub(object):
         if fb_grap_api_version is None:
              self.fb_graph_api = FB_GRAPH_API_URL
         else:
-            self.fb_graph_api = '{fb_graph_api}/{version}/'.format(fb_graph_api=FB_GRAPH_API_URL, 
-                                                                   version=fb_grap_api_version)
+            self.fb_graph_api = '{fb_graph_api_url}/{version}/'.format(fb_graph_api_url=FB_GRAPH_API_URL, 
+                                                                       version=fb_grap_api_version)
 
         self.mask_unhandled_exceptions = mask_unhandled_exceptions
         self.oauth_token_redirect_uri = oauth_token_redirect_uri
