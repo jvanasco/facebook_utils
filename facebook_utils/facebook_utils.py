@@ -362,7 +362,8 @@ class FacebookHub(object):
         if fb_grap_api_version is None:
              self.fb_graph_api = FB_GRAPH_API_URL
         else:
-            self.fb_graph_api = '{fb_graph_api}/{version}/'.format(fb_graph_api=FB_GRAPH_API_URL, version=fb_grap_api_version)
+            self.fb_graph_api = '{fb_graph_api}/{version}/'.format(fb_graph_api=FB_GRAPH_API_URL, 
+                                                                   version=fb_grap_api_version)
 
         self.mask_unhandled_exceptions = mask_unhandled_exceptions
         self.oauth_token_redirect_uri = oauth_token_redirect_uri
@@ -544,8 +545,7 @@ class FacebookHub(object):
         return u'{fb_url}/dialog/oauth?client_id={app_id}&scope={scope}&redirect_uri={redirect_uri}&response_type=token'.format(fb_url=FB_URL,
                                                                                                                                 app_id=self.app_id, 
                                                                                                                                 redirect_uri=urllib.quote( redirect_uri ), 
-                                                                                                                                scope=scope
-                                                                                                                                )
+                                                                                                                                scope=scope)
 
     def oauth__url_extend_access_token(self, access_token=None):
         """Generates the URL to extend an access token from Facebook.
@@ -567,8 +567,7 @@ class FacebookHub(object):
         return u'{fb_graph_api}/oauth/access_token?client_id={app_id}&client_secret={client_secret}s&grant_type=fb_exchange_token&fb_exchange_token={access_token}'.format(fb_graph_api=self.fb_graph_api,
                                                                                                                                                                            app_id=self.app_id,
                                                                                                                                                                            client_secret=self.app_secret, 
-                                                                                                                                                                           access_token=access_token
-                                                                                                                                                                           )
+                                                                                                                                                                           access_token=access_token)
     def graph__extend_access_token(self, access_token=None):
         """ see oauth__url_extend_access_token  """
         if access_token is None or not access_token:
@@ -588,8 +587,7 @@ class FacebookHub(object):
             raise ValueError('must submit access_token')
 
         return u'{fb_graph_api}/me?{access_token}'.format(fb_graph_api=self.fb_graph_api, 
-                                                          access_token=urllib.urlencode(dict(access_token=access_token))
-                                                          )
+                                                          access_token=urllib.urlencode(dict(access_token=access_token)))
 
 
     def graph__url_user_for_access_token(self, access_token=None, user=None, action=None):
@@ -601,12 +599,10 @@ class FacebookHub(object):
             return u'{fb_graph_api}/{user}/{action}?{access_token}'.format(fb_graph_api=self.fb_graph_api,
                                                                            user=user,
                                                                            action=action,
-                                                                           access_token=urllib.urlencode(dict(access_token=access_token))
-                                                                           )
+                                                                           access_token=urllib.urlencode(dict(access_token=access_token)))
         return u'{fb_graph_api}/{user}?{access_token}'.format(fb_graph_api=self.fb_graph_api,
                                                               user=user,
-                                                              access_token=urllib.urlencode(dict(access_token=access_token)) 
-                                                              )
+                                                              access_token=urllib.urlencode(dict(access_token=access_token)))
 
     def graph__get_profile_for_access_token(self, access_token=None, user=None, action=None):
         """Grabs a profile for a user, corresponding to a profile, from Facebook.  This uses `requests` to open the url, so should be considered as blocking code."""
@@ -645,8 +641,7 @@ class FacebookHub(object):
 
         url = u'{fb_graph_api}/me/{fb_fb_app_namespace}:{fb_action_type_name}'.format(fb_graph_api=self.fb_graph_api,
                                                                                       fb_app_namespace=fb_app_namespace, 
-                                                                                      fb_action_type_name=fb_action_type_name
-                                                                                      )
+                                                                                      fb_action_type_name=fb_action_type_name)
         post_data = {
             'access_token': access_token,
             object_type_name: object_instance_url,
@@ -664,8 +659,7 @@ class FacebookHub(object):
         url = u'{fb_graph_api}/me/{fb_app_namespace}:{fb_action_type_name}?access_token={access_token}'.format(fb_graph_api=self.fb_graph_api,
                                                                                                                fb_app_namespace=fb_app_namespace,
                                                                                                                fb_action_type_name=fb_action_type_name,
-                                                                                                               access_token=access_token
-                                                                                                               )
+                                                                                                               access_token=access_token)
         try:
             payload = self.api_proxy(url, expected_format='json.load')
             return payload
@@ -776,7 +770,7 @@ class FacebookPyramid(FacebookHub):
             oauth_token_redirect_uri = request.registry.settings['facebook.app.oauth_token_redirect_uri']
         if ssl_verify is None and 'facebook.app.ssl_verify' in request.registry.settings:
             ssl_verify = request.registry.settings['facebook.app.ssl_verify']
-            
+
         FacebookHub.__init__(self, 
                              app_id=app_id, 
                              app_secret=app_secret, 
