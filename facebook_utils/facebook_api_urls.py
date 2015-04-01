@@ -2,6 +2,7 @@
 
 import urllib
 
+
 FB_GRAPH_API_URL = 'https://graph.facebook.com/'
 FB_URL = 'https://www.facebook.com'
 
@@ -13,15 +14,15 @@ class FacebookApiUrls(object):
         return u'{fb_url}/dialog/oauth?client_id={app_id}&scope={scope}&redirect_uri={redirect_uri}'.format(fb_url=FB_URL,
                                                                                                             app_id=app_id,
                                                                                                             scope=scope,
-                                                                                                            redirect_uri=redirect_uri,
+                                                                                                            redirect_uri=urllib.quote(redirect_uri),
                                                                                                             )
 
     @classmethod
     def oauth_code__url_access_token(cls, fb_graph_api, app_id, redirect_uri, app_secret, submitted_code):
-        return u'{fb_graph_api}/oauth/access_token?client_id={app_id}&redirect_uri={redirect_uri}&client_secret={client_secret}&code={code}'.format(fb_graph_api=fb_graph_api,
+        return u'{fb_graph_api}/oauth/access_token?client_id={app_id}&redirect_uri={redirect_uri}&client_secret={app_secret}&code={code}'.format(fb_graph_api=fb_graph_api,
                                                                                                                                                     app_id=app_id,
                                                                                                                                                     redirect_uri=urllib.quote(redirect_uri),
-                                                                                                                                                    client_secret=app_secret,
+                                                                                                                                                    app_secret=app_secret,
                                                                                                                                                     code=submitted_code,
                                                                                                                                                     )
 
@@ -35,9 +36,9 @@ class FacebookApiUrls(object):
 
     @classmethod
     def oauth__url_extend_access_token(cls, fb_graph_api, app_id, app_secret, access_token):
-        return u'{fb_graph_api}/oauth/access_token?client_id={app_id}&client_secret={client_secret}&grant_type=fb_exchange_token&fb_exchange_token={access_token}'.format(fb_graph_api=fb_graph_api,
+        return u'{fb_graph_api}/oauth/access_token?client_id={app_id}&client_secret={app_secret}&grant_type=fb_exchange_token&fb_exchange_token={access_token}'.format(fb_graph_api=fb_graph_api,
                                                                                                                                                                           app_id=app_id,
-                                                                                                                                                                          client_secret=app_secret,
+                                                                                                                                                                          app_secret=app_secret,
                                                                                                                                                                           access_token=access_token,
                                                                                                                                                                           )
 

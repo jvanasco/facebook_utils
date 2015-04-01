@@ -1,8 +1,6 @@
 facebook_utils
 ~~~~~~~~~~~~
 
-v 0.20.0
-
 A collection of utilities for integrating user accounts with Facebook.com
 
 right now this handles oauth and graph operations
@@ -29,6 +27,17 @@ from your .ini and pulling variables from 'request' as needed.
 
 `facebook_utils.FacebookHub()` can be used directly - however it will not
 pull the appropriate settings from the .ini or request.
+
+
+IMPORTANT NOTE
+==============
+
+Facebook's API Support is inconsistent with the terminology:
+
+* The API endpoints expect `client_id` and `client_secret`
+* The Developer Tools provide `app id` and `app secret`
+
+For the sake of clarity, this library uses the terms `app_id` and `app_secret` because they are what Facebook's developer dashboard provides.  They are translated into the API Endpoint terms as required.
 
 
 Supports Two oAuth Flows

@@ -95,7 +95,7 @@ class FacebookHub(object):
         return FacebookApiUrls.oauth_code__url_access_token(fb_graph_api=self.fb_graph_api,
                                                             app_id=self.app_id,
                                                             redirect_uri=redirect_uri,
-                                                            client_secret=self.app_secret,
+                                                            app_secret=self.app_secret,
                                                             code=submitted_code,
                                                             )
 
@@ -256,7 +256,7 @@ class FacebookHub(object):
 
         https://graph.facebook.com/oauth/access_token?
             client_id=APP_ID&
-            client_secret=APP_SECRET&
+            app_secret=APP_SECRET&
             grant_type=fb_exchange_token&
             fb_exchange_token=EXISTING_ACCESS_TOKEN
 
@@ -269,7 +269,7 @@ class FacebookHub(object):
         return FacebookApiUrls.oauth__url_extend_access_token(
             fb_graph_api=self.fb_graph_api,
             app_id=self.app_id,
-            client_secret=self.app_secret,
+            app_secret=self.app_secret,
             access_token=access_token
         )
 
