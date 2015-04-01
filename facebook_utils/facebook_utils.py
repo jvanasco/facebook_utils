@@ -1,330 +1,24 @@
-r"""
-    facebook_utils
-    ~~~~~~~~~~~~
-
-    v 0.20.0
-
-    A collection of utilities for integrating user accounts with Facebook.com
-
-    right now this handles oauth and graph operations
-
-    Purpose
-    =======
-
-    1. Facebook dropped development and support of their python sdk
-
-    2. There are a handful of pyramid utilities that provide a complete drop-in
-    integration with Facebook.com; This is NOT one of them. Sometimes you want
-    to control the User Experience and have all your pages custom; if so, this
-    is for you.
+# -*- coding: utf-8 -*-
 
 
-    Usage
-    =====
-
-    This was originally built/intended for use under the Pyramid environment
-
-    calling `FacebookPyramid()` will create a new object that
-    subclasses `FacebookHub()` objects, using  default settings
-    from your .ini and pulling variables from 'request' as needed.
-
-    `facebook_utils.FacebookHub()` can be used directly - however it will not
-    pull the appropriate settings from the .ini or request.
-
-
-    Supports Two oAuth Flows
-    =========================
-
-    Flow 1 - Server Side
-    --------------------
-    1. configure an object with `oauth_code_redirect_uri`
-    2. consumers click a button on your site, which redirects to
-    `oauth_code_redirect_uri` -- as provided by `oauth_code__url_dialog()`
-    3. upon success, users are redirected from facebook to
-    `oauth_code_redirect_uri` along with a query param titled `code`
-    4. you may then call `.oauth_code__get_access_token()` to get an access
-    token or call `oauth_code__get_access_token_and_profile()` to get the token
-    and profile data.
-    5. profile data can be updated with `.graph__get_profile(access_token)`
-
-
-    Flow 2 - Client Side
-    --------------------
-    1. configure an object with `oauth_token_redirect_uri`
-    2. consumers click a button on your site, which redirects to
-    `oauth_token_redirect_uri` -- as provided by `oauth_token__url_dialog()`
-    3. upon success, users are redirected from facebook to
-    `oauth_token__url_dialog` along with a query param titled `token` and a
-    hash value titled `#access_token`.  The `access_token` is not visible to
-    the server, and must be transferred to your server via JavaScript or
-    not-at-all should you simply want to do all your integration in JavaScript.
-    4. profile data can be obtained with `.graph__get_profile(access_token)`
-    if you store the access token
-
-
-    Notes
-    =====
-    Most methods will let you override the 'scope' and 'request_uri'.  This
-    shouldn't really be necessary and will probably be deprecated.
-
-
-    Pyramid Examples
-    ================
-    define some variables in your .ini files:
-
-    file: development.ini
-
-        facebook.app.id = 123
-        facebook.app.secret = 123
-        facebook.app.scope = email, user_birthday, user_checkins, offline_access
-        facebook.app.oauth_code_redirect_uri = http://127.0.0.1:5010/facebook-oauth-redirect
-
-
-    integrate into your handlers:
-
-        from facebook_utils import FacebookPyramid
-
-        class WebAccount(base.Handler):
-            def __new_fb_object(self):
-                "Create a new Facebook Object"
-                # note that we can override settings in the .ini files
-                oauth_code_redirect_uri= "http://%(app_domain)s/account/facebook-authenticate-oauth?response_type=code" % {'app_domain': self.request.registry.settings['app_domain']}
-                oauth_token_redirect_uri= "http://%(app_domain)s/account/facebook-authenticate-oauth-token?response_type=token" % {'app_domain': self.request.registry.settings['app_domain']}
-                fb= FacebookPyramid(self.request, oauth_code_redirect_uri=oauth_code_redirect_uri)
-                return fb
-
-            def sign_up(self):
-                "sign up page, which contains a "signup with facebook link"
-                fb= self.__new_fb_object()
-                return {"project":"MyApp", 'facebook_pyramid':facebook}
-
-            @action(renderer="web/account/facebook_authenticate_oauth.html")
-            def facebook_authenticate_oauth(self):
-                fb= self.__new_fb_object()
-                (access_token, profile)= fb.oauth_code__get_access_token_and_profile(self.request)
-                if profile:
-                    # congrats, they logged in
-                    # register the user to your db
-                    raise HTTPFound(location='/account/home')
-                else:
-                    # boo, that didn't work
-                    raise HTTPFound(location='/account/sign-up?error=facebook-oauth-failure')
-                return {"project":"MyApp"}
-
-
-    integrate into your template:
-                <a class="fancy_button-1" id="signup-start_btn-facebook" href="${facebook_pyramid.oauth_code__url_dialog()}">
-                    Connect with <strong>Facebook</strong>
-                </a>
-
-    Graph Operations
-    ================
-
-    Every `hub` object has an `api_proxy` method, which can be used to
-    centralize communication to the Facebook API
-
-    Facebook's API isn't very 'standardized' across the board. Some endpoints
-    return json data, others return urlquoted data.  `api_proxy` doesn't care.
-    it returns a dict from every endpoint, and does the conversion for you.
-
-    The `api_proxy` defaults to a json load.  certain api calls will pass in
-    a different `expected_format` argument.  The proxy will also handle 'batch'
-    style graph requests.
-
-    When the api_proxy encounters an error, it returns `ApiError` or a more
-    contextual subclass of the that exception class.
-
-    The current exception class inheritance is:
-
-        ApiError
-            ApiAuthError
-                ApiAuthExpiredError
-            ApiApplicationError
-            ApiResponseError
-            ApiRuntimeError
-                ApiRuntimeVerirficationFormatError
-                ApiRuntimeGrantError
-                ApiRuntimeScopeError
-                ApiRuntimeGraphMethodError
-            ApiUnhandledError
-
-    `ApiError` instances contain:
-        code (facebook specific, not http code)
-        type (as dictacted by facebook)
-        message (possibly dictated by facebook)
-        raised (the trapped error that raised this, if available)
-        response (the repsonse in error, if available)
-
-    the `api_proxy` will catch *most* errors.  since this is in development,
-    i'm raising uncaught exceptions.  There will be a future "ApiUnhandledError"
-
-
-    Unit Tests
-    ===========
-
-    Unit Tests require the following environment vars to be set:
-
-        PYTHON_FB_UTILS_APP_ID
-        PYTHON_FB_UTILS_APP_SECRET
-        PYTHON_FB_UTILS_APP_SCOPE
-        PYTHON_FB_UTILS_ACCESS_TOKEN
-
-            export PYTHON_FB_UTILS_APP_ID="app_id_from_facebook.com"
-            export PYTHON_FB_UTILS_APP_SECRET="app_secret_from_facebook.com"
-            export PYTHON_FB_UTILS_APP_SCOPE="email,user_activities,user_status,read_stream"
-            export PYTHON_FB_UTILS_ACCESS_TOKEN="from_API_operations"
-
-    ToDo
-    =======
-    - I think in the future, the 'dicts' that come back should be cast into a 'response' object, and there will be some metadata attached to it.
-
-
-:copyright: 2012-2013 by Jonathan Vanasco
-    license: BSD
-"""
-
-import base64
-import cgi
 import datetime
-import hashlib
-import hmac
-try:
-    import simplejson as json
-except ImportError:
-    import json
-import urllib
+import requests 
 import urlparse
-from time import time
+import hashlib
+import base64
 import types
+import time 
+import hmac
+import cgi
 
-import requests
-
-
-class ApiError(Exception):
-    """
-    Raised if there is an error with authentication
-    """
-    code = None
-    type = None
-    message = None
-    response = None
-    raised = None
-
-    def __init__(self, code=None, type=None, message=None, response=None, raised=None):
-        self.code = code
-        self.type = type
-        self.message = message
-        self.response = response
-        self.raised = raised
-
-    def __str__(self):
-        return "ApiError: %s | %s | %s" % (self.code, self.type, self.message)
+try:
+	import simplejson as json
+except ImportError:
+	import json
 
 
-class ApiAuthError(ApiError):
-    """
-    Raised if there is an error with authentication
-    """
-    pass
-
-
-class ApiAuthExpiredError(ApiAuthError):
-    """
-    Raised if there is an error with authentication due to expiry
-    """
-    pass
-
-
-class ApiApplicationError(ApiError):
-    """
-    Raised if there is an error with the application setup
-    """
-    pass
-
-
-class ApiResponseError(ApiError):
-    """
-    Raised if the response is weird
-    """
-    pass
-
-
-class ApiRuntimeError(ApiError):
-    """
-    Raised if there is an error on the application when run
-    """
-    pass
-
-
-class ApiRuntimeVerirficationFormatError(ApiRuntimeError):
-    """
-    Raised if there is an error on the applicaiton when run: Invalid verification code format
-    """
-    pass
-
-
-class ApiRuntimeGrantError(ApiRuntimeError):
-    """
-    Raised if there is an error on the application when run: Invalid verification code format
-    """
-    pass
-
-
-class ApiRuntimeScopeError(ApiRuntimeError):
-    """
-    Raised if there is an error on the application when run: Invalid verification code format
-    """
-    pass
-
-
-class ApiRuntimeGraphMethodError(ApiError):
-    """
-    Raised if there is an error on the application when run: Invalid graph method
-    """
-    pass
-
-
-class ApiUnhandledError(ApiError):
-    """
-    Raised if something bad happened, so you only have to track one error.
-    Note that this inherits from ApiError - so this should be the first thing you catch
-
-    Good - raises ApiUnhandledError
-        try:
-            raise ApiUnhandledError()
-        except ApiUnhandledError, e:
-            print "raised ApiUnhandledError"
-        except ApiError, e:
-            print "raised ApiError"
-
-    Bad - raises ApiError
-        try:
-            raise ApiUnhandledError()
-        except ApiError, e:
-            print "raised ApiError"
-        except ApiUnhandledError, e:
-            print "raised ApiUnhandledError"
-
-    """
-    pass
-
-    def __str__(self):
-        return "ApiError: %s " % (self.raised)
-
-
-def reformat_error(json_string, raised=None):
-    rval = {'message': None, 'type': None, 'code': None, 'raised': None, }
-    for k in rval.keys():
-        if k in json_string:
-            rval[k] = json_string[k]
-    if raised is not None:
-        rval['raised'] = raised
-    return rval
-
-
-def facebook_time(fb_time):
-    """parses facebook's timestamp into a datetime object"""
-    return datetime.datetime.strptime(fb_time, '%Y-%m-%dT%H:%M:%S+0000')
+from facebook_api_urls import FacebookApiUrls, FB_GRAPH_API_URL
+from facebook_exceptions import *
 
 
 class FacebookHub(object):
@@ -338,19 +32,37 @@ class FacebookHub(object):
     mask_unhandled_exceptions = False
     ssl_verify = True
 
-    def __init__(self, app_id=None, app_secret=None, app_scope=None, app_domain=None, oauth_code_redirect_uri=None, oauth_token_redirect_uri=None, debug_error=False, mask_unhandled_exceptions=False, ssl_verify=True):
+    def __init__(self, 
+                 mask_unhandled_exceptions=False, 
+                 oauth_token_redirect_uri=None, 
+                 oauth_code_redirect_uri=None, 
+                 fb_grap_api_version=None,
+                 debug_error=False, 
+                 app_domain=None, 
+                 app_secret=None, 
+                 ssl_verify=True,
+                 app_scope=None, 
+                 app_id=None):
+
         """Initialize the FacebookHub object with some variables.  app_id and app_secret are required."""
         if app_id is None or app_secret is None:
             raise ValueError("Must initialize FacebookHub() with an app_id and an app_secret")
-        self.app_id = app_id
-        self.app_secret = app_secret
-        self.app_scope = app_scope
-        self.app_domain = app_domain
-        self.oauth_code_redirect_uri = oauth_code_redirect_uri
-        self.oauth_token_redirect_uri = oauth_token_redirect_uri
-        self.debug_error = debug_error
+
+        if fb_grap_api_version is None:
+             self.fb_graph_api = FB_GRAPH_API_URL
+        else:
+            self.fb_graph_api = u'{fb_graph_api_url}/{version}/'.format(fb_graph_api_url=FB_GRAPH_API_URL, 
+                                                                        version=fb_grap_api_version)
+
         self.mask_unhandled_exceptions = mask_unhandled_exceptions
+        self.oauth_token_redirect_uri = oauth_token_redirect_uri
+        self.oauth_code_redirect_uri = oauth_code_redirect_uri
+        self.debug_error = debug_error
+        self.app_secret = app_secret
+        self.app_domain = app_domain
         self.ssl_verify = ssl_verify
+        self.app_scope = app_scope
+        self.app_id = app_id
 
     def oauth_code__url_dialog(self, redirect_uri=None, scope=None):
         """Generates the URL for an oAuth dialog to facebook for a "code" flow.  This flow will return the user to your website with a 'code' object in a query param. """
@@ -358,7 +70,9 @@ class FacebookHub(object):
             scope = self.app_scope
         if redirect_uri is None:
             redirect_uri = self.oauth_code_redirect_uri
-        return """https://www.facebook.com/dialog/oauth?client_id=%(app_id)s&scope=%(scope)s&redirect_uri=%(redirect_uri)s""" % {'app_id': self.app_id, "redirect_uri": urllib.quote(redirect_uri), 'scope': scope, }
+
+        return FacebookApiUrls.oauth_code__url_dialog(app_id=self.app_id, scope=scope, redirect_uri=redirect_uri)
+
 
     def oauth_code__url_access_token(self, submitted_code=None, redirect_uri=None, scope=None):
         """Generates the URL to grab an access token from Facebook.  This is returned based on EXACTLY matching the app_id, app_secret, and 'code' with the redirect_uri. If you change the redirect uri - or any other component - it will break.
@@ -371,7 +85,10 @@ class FacebookHub(object):
             redirect_uri = self.oauth_code_redirect_uri
         if scope is None:
             scope = self.app_scope
-        return """https://graph.facebook.com/oauth/access_token?client_id=%(app_id)s&redirect_uri=%(redirect_uri)s&client_secret=%(client_secret)s&code=%(code)s""" % {'app_id': self.app_id, "redirect_uri": urllib.quote(redirect_uri), 'client_secret': self.app_secret, 'code': submitted_code, }
+
+        return FacebookApiUrls.oauth_code__url_access_token(fb_graph_api=self.fb_graph_api, app_id=self.app_id, redirect_uri=redirect_uri, client_secret=self.app_secret, code=submitted_code)
+
+      
 
     def api_proxy(self, url, post_data=None, expected_format='json.load', is_delete=False, ssl_verify=None):
         response = None
@@ -507,8 +224,10 @@ class FacebookHub(object):
             scope = self.app_scope
         if redirect_uri is None:
             redirect_uri = self.oauth_token_redirect_uri
-        return """https://www.facebook.com/dialog/oauth?client_id=%(app_id)s&scope=%(scope)s&redirect_uri=%(redirect_uri)s&response_type=token""" % {'app_id': self.app_id, "redirect_uri": urllib.quote(redirect_uri), 'scope': scope, }
 
+        return FacebookApiUrls.oauth_token__url_dialog(app_id=self.app_id, redirect_uri=redirect_uri, scope=scope)
+
+ 
     def oauth__url_extend_access_token(self, access_token=None):
         """Generates the URL to extend an access token from Facebook.
 
@@ -525,7 +244,8 @@ class FacebookHub(object):
         """
         if access_token is None:
             raise ValueError('must call with access_token')
-        return """https://graph.facebook.com/oauth/access_token?client_id=%(app_id)s&client_secret=%(client_secret)s&grant_type=fb_exchange_token&fb_exchange_token=%(access_token)s""" % {'app_id': self.app_id, 'client_secret': self.app_secret, 'access_token': access_token, }
+
+        return FacebookApiUrls.oauth__url_extend_access_token(fb_graph_api=self.fb_graph_api, app_id=self.app_id, client_secret=self.app_secret, access_token=access_token)
 
     def graph__extend_access_token(self, access_token=None):
         """ see oauth__url_extend_access_token  """
@@ -544,7 +264,9 @@ class FacebookHub(object):
     def graph__url_me_for_access_token(self, access_token=None):
         if access_token is None:
             raise ValueError('must submit access_token')
-        return "https://graph.facebook.com/me?" + urllib.urlencode(dict(access_token=access_token))
+
+        return FacebookApiUrls.graph__url_me_for_access_token(fb_graph_api=self.fb_graph_api, access_token=access_token)
+
 
     def graph__url_user_for_access_token(self, access_token=None, user=None, action=None):
         if access_token is None:
@@ -552,8 +274,10 @@ class FacebookHub(object):
         if user is None:
             raise ValueError('must submit user')
         if action:
-            return "https://graph.facebook.com/%s/%s?%s" % (user, action, urllib.urlencode(dict(access_token=access_token)))
-        return "https://graph.facebook.com/%s?%s" % (user, urllib.urlencode(dict(access_token=access_token)))
+        	return FacebookApiUrls.graph__url_user_for_access_token(fb_graph_api=self.fb_graph_api, access_token=access_token, user=user, action=action)
+
+        return FacebookApiUrls.graph__url_user_for_access_token(fb_graph_api=self.fb_graph_api, access_token=access_token, user=user, action=None)
+           
 
     def graph__get_profile_for_access_token(self, access_token=None, user=None, action=None):
         """Grabs a profile for a user, corresponding to a profile, from Facebook.  This uses `requests` to open the url, so should be considered as blocking code."""
@@ -577,12 +301,21 @@ class FacebookHub(object):
     def graph__get_profile(self, access_token=None):
         raise ValueError('Deprecated; call graph__get_profile_for_access_token instead')
 
-    def graph__action_create(self, access_token=None, fb_app_namespace=None, fb_action_type_name=None, object_type_name=None, object_instance_url=None):
+
+    def graph__action_create(self, 
+                             access_token=None, 
+                             fb_app_namespace=None, 
+                             fb_action_type_name=None, 
+                             object_type_name=None, 
+                             object_instance_url=None):
+
         if not all((access_token, fb_app_namespace, fb_action_type_name)):
             raise ValueError('must submit access_token, fb_app_namespace, fb_action_type_name')
         if not all((object_type_name, object_instance_url)):
-            raise ValueError('must submit object_type_name, object_instance_url ')
-        url = "https://graph.facebook.com/me/%s:%s" % (fb_app_namespace, fb_action_type_name)
+            raise ValueError('must submit object_type_name, object_instance_url')
+
+        url = FacebookApiUrls.graph__action_create_url(fb_graph_api=self.fb_graph_api, fb_app_namespace=fb_app_namespace, fb_action_type_name=fb_action_type_name)
+      
         post_data = {
             'access_token': access_token,
             object_type_name: object_instance_url,
@@ -596,7 +329,9 @@ class FacebookHub(object):
     def graph__action_list(self, access_token=None, fb_app_namespace=None, fb_action_type_name=None):
         if not all((access_token, fb_app_namespace, fb_action_type_name)):
             raise ValueError('must submit access_token, fb_app_namespace, fb_action_type_name')
-        url = "https://graph.facebook.com/me/%s:%s?access_token=%s" % (fb_app_namespace, fb_action_type_name, access_token)
+
+        url = FacebookApiUrls.graph__action_list_url(fb_graph_api=self.fb_graph_api, fb_app_namespace=fb_app_namespace, fb_action_type_name=fb_action_type_name, access_token=access_token)
+
         try:
             payload = self.api_proxy(url, expected_format='json.load')
             return payload
@@ -606,7 +341,9 @@ class FacebookHub(object):
     def graph__action_delete(self, access_token=None, action_id=None):
         if not all((access_token, action_id)):
             raise ValueError('must submit action_id')
-        url = "https://graph.facebook.com/%s" % (action_id)
+
+        url = FacebookApiUrls.graph__action_delete_url(fb_graph_api=self.fb_graph_api, action_id=action_id)
+
         post_data = {
             'access_token': access_token,
         }
@@ -673,9 +410,23 @@ class FacebookHub(object):
 
 class FacebookPyramid(FacebookHub):
 
-    def __init__(self, request, app_id=None, app_secret=None, app_scope=None, app_domain=None, oauth_code_redirect_uri=None, oauth_token_redirect_uri=None, ssl_verify=None):
+    def __init__( self, 
+                  request, 
+                  oauth_token_redirect_uri=None, 
+                  oauth_code_redirect_uri=None, 
+                  fb_graph_api_version=None,
+                  app_secret=None, 
+                  app_domain=None, 
+                  ssl_verify=None, 
+                  app_scope=None, 
+                  app_id=None): 
+
         """Creates a new FacebookHub object, sets it up with Pyramid Config vars, and then proxies other functions into it"""
         self.request = request
+
+        if fb_graph_api_version is None and 'facebook.graph_api_version' in request.registry.settings:
+            fb_graph_api_version = request.registry.settings['facebook.graph_api_version']
+
         if app_id is None and 'facebook.app.id' in request.registry.settings:
             app_id = request.registry.settings['facebook.app.id']
         if app_secret is None and 'facebook.app.secret' in request.registry.settings:
@@ -690,7 +441,16 @@ class FacebookPyramid(FacebookHub):
             oauth_token_redirect_uri = request.registry.settings['facebook.app.oauth_token_redirect_uri']
         if ssl_verify is None and 'facebook.app.ssl_verify' in request.registry.settings:
             ssl_verify = request.registry.settings['facebook.app.ssl_verify']
-        FacebookHub.__init__(self, app_id=app_id, app_secret=app_secret, app_scope=app_scope, app_domain=app_domain, oauth_code_redirect_uri=oauth_code_redirect_uri, oauth_token_redirect_uri=oauth_token_redirect_uri, ssl_verify=ssl_verify)
+
+        FacebookHub.__init__(self, 
+                             app_id=app_id, 
+                             app_secret=app_secret, 
+                             app_scope=app_scope, 
+                             app_domain=app_domain, 
+                             oauth_code_redirect_uri=oauth_code_redirect_uri, 
+                             oauth_token_redirect_uri=oauth_token_redirect_uri, 
+                             ssl_verify=ssl_verify,
+                             fb_grap_api_version=fb_graph_api_version)
 
     def oauth_code__url_access_token(self, submitted_code=None, redirect_uri=None, scope=None):
         if submitted_code is None:
