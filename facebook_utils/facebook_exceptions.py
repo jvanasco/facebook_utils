@@ -1,59 +1,62 @@
+import datetime
+
 
 class ApiError(Exception):
 
-	""" Handle the facebook api errors 
+    """ Handle the facebook api errors
 
-	"""
+    """
 
-	code = None 
-	type = None
-	message = None
-	response = None
-	raised = None
+    code = None
+    type = None
+    message = None
+    response = None
+    raised = None
 
-	def __init__(self,
-				 code=None,
-				 type=None,
-				 message=None,
-				 response=None,
-				 raised=None):
+    def __init__(self,
+                 code=None,
+                 type=None,
+                 message=None,
+                 response=None,
+                 raised=None,
+                 ):
+        self.code = code
+        self.type = type
+        self.message = message
+        self.response = response
+        self.raised = raised
 
-		self.code = code
-		self.type = type
-		self.message = message
-		self.response = response
-		self.raised = raised 
-
-
-	def __str__(self):
-		return u'ApiError: {code} | {type} | {message}'.format(code=self.code,
-			                                                   type=self.type,
-			                                                   message=self.message)
+    def __str__(self):
+        return u'ApiError: {code} | {type} | {message}'.format(code=self.code,
+                                                               type=self.type,
+                                                               message=self.message,
+                                                               )
 
 
 class ApiAuthError(ApiError):
-	""" Facebook api authentification error
- 
-	"""
-	pass
+    """ Facebook api authentification error
+
+    """
+    pass
 
 
 class ApiAuthExpiredError(ApiAuthError):
-	""" Facebook api authentification error due to expiry 
- 
-	"""
-	pass
+    """ Facebook api authentification error due to expiry
+
+    """
+    pass
+
 
 class ApiApplicationError(ApiError):
     """ Application set up error
-    
+
     """
     pass
 
 
 class ApiResponseError(ApiError):
     """
-  	Api Response Error
+    Api Response Error
     """
     pass
 
@@ -93,9 +96,6 @@ class ApiRuntimeGraphMethodError(ApiError):
     pass
 
 
-
-
-
 class ApiUnhandledError(ApiError):
     """
     Raised if something bad happened, so you only have to track one error.
@@ -118,7 +118,6 @@ class ApiUnhandledError(ApiError):
             print "raised ApiUnhandledError"
 
     """
-    pass
 
     def __str__(self):
         return "ApiError: %s " % (self.raised)
@@ -126,13 +125,12 @@ class ApiUnhandledError(ApiError):
 
 def reformat_error(json_string, raised=None):
 
-    rval = {
-    		'message': None, 
-            'type': None, 
-            'code': None, 
+    rval = {'message': None,
+            'type': None,
+            'code': None,
             'raised': None
             }
-            
+
     for k in rval.keys():
         if k in json_string:
             rval[k] = json_string[k]
@@ -144,5 +142,3 @@ def reformat_error(json_string, raised=None):
 def facebook_time(fb_time):
     """parses facebook's timestamp into a datetime object"""
     return datetime.datetime.strptime(fb_time, '%Y-%m-%dT%H:%M:%S+0000')
-
-
