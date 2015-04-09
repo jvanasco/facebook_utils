@@ -1,3 +1,8 @@
+0.30.2 (2015-04-09)
+------------------
+- fixed wrong kwargs on `oauth_code__url_access_token` and `self.oauth_code__get_access_token`
+
+
 0.30.0 (2015-04-01)
 ------------------
 - added in corred BSD license

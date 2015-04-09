@@ -96,7 +96,7 @@ class FacebookHub(object):
                                                             app_id=self.app_id,
                                                             redirect_uri=redirect_uri,
                                                             app_secret=self.app_secret,
-                                                            code=submitted_code,
+                                                            submitted_code=submitted_code,
                                                             )
 
     def api_proxy(self, url, post_data=None, expected_format='json.load', is_delete=False, ssl_verify=None):
@@ -208,7 +208,7 @@ class FacebookHub(object):
             scope = self.app_scope
         if redirect_uri is None:
             redirect_uri = self.oauth_code_redirect_uri
-        url_access_token = self.oauth_code__url_access_token(submitted_code,
+        url_access_token = self.oauth_code__url_access_token(submitted_code=submitted_code,
                                                              redirect_uri=redirect_uri,
                                                              scope=scope,
                                                              )
@@ -228,7 +228,7 @@ class FacebookHub(object):
             raise ValueError('must submit a code')
         (access_token, profile) = (None, None)
         try:
-            access_token = self.oauth_code__get_access_token(submitted_code,
+            access_token = self.oauth_code__get_access_token(submitted_code=submitted_code,
                                                              redirect_uri=redirect_uri,
                                                              scope=scope,
                                                              )
