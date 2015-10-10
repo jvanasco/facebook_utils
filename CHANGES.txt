@@ -1,3 +1,9 @@
+0.30.3 (2015-10-08)
+------------------
+- added `auth_type` to `oauth_code__url_dialog` methods (see https://developers.facebook.com/docs/facebook-login/permissions/v2.5#adding)
+- added `access_token` arg to `api_proxy`
+- cleaned up some misc formatting
+
 0.30.2 (2015-04-09)
 ------------------
 - fixed wrong kwargs on `oauth_code__url_access_token` and `self.oauth_code__get_access_token`

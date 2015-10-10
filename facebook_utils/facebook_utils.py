@@ -4,6 +4,7 @@
 import datetime
 import requests
 import urlparse
+import urllib
 import hashlib
 import base64
 import types
@@ -47,7 +48,13 @@ class FacebookHub(object):
                  app_scope=None,
                  app_id=None,
                  ):
-        """Initialize the FacebookHub object with some variables.  app_id and app_secret are required."""
+        """
+        Initialize the ``FacebookHub`` object with some variables.
+
+        required kwargs:
+            `app_id`
+            `app_secret`
+        """
         if app_id is None or app_secret is None:
             raise ValueError("Must initialize FacebookHub() with an app_id and an app_secret")
 
@@ -68,8 +75,16 @@ class FacebookHub(object):
         self.app_scope = app_scope
         self.app_id = app_id
 
-    def oauth_code__url_dialog(self, redirect_uri=None, scope=None):
-        """Generates the URL for an oAuth dialog to facebook for a "code" flow.  This flow will return the user to your website with a 'code' object in a query param. """
+    def oauth_code__url_dialog(self, redirect_uri=None, scope=None, auth_type=None,):
+        """
+        Generates the URL for an oAuth dialog to Facebook for a "code" flow.  
+        This flow will return the user to your website with a 'code' object in a query param.
+
+        Note on `auth_type` 
+        Facebook's API requires `auth_type=rerequest` for re-requested attributes
+        via https://developers.facebook.com/docs/facebook-login/permissions/v2.5#adding
+            "If someone has declined a permission for your app, the login dialog won't let your app re-request the permission unless you pass auth_type=rerequest along with your request."
+        """
         if scope is None:
             scope = self.app_scope
         if redirect_uri is None:
@@ -78,12 +93,15 @@ class FacebookHub(object):
         return FacebookApiUrls.oauth_code__url_dialog(app_id=self.app_id,
                                                       scope=scope,
                                                       redirect_uri=redirect_uri,
+                                                      auth_type=auth_type,
                                                       )
 
     def oauth_code__url_access_token(self, submitted_code=None, redirect_uri=None, scope=None):
-        """Generates the URL to grab an access token from Facebook.  This is returned based on EXACTLY matching the app_id, app_secret, and 'code' with the redirect_uri. If you change the redirect uri - or any other component - it will break.
+        """
+        Generates the URL to grab an access token from Facebook.
+        This is returned based on EXACTLY matching the app_id, app_secret, and 'code' with the redirect_uri.
+        If you change the redirect uri - or any other component - it will break.
         https://graph.facebook.com/oauth/access_token?client_id=YOUR_APP_ID&redirect_uri=YOUR_URL&client_secret=YOUR_APP_SECRET&code=THE_CODE_FROM_URL_DIALOG_TOKEN
-
         """
         if submitted_code is None:
             raise ValueError('must call with submitted_code')
@@ -99,16 +117,31 @@ class FacebookHub(object):
                                                             submitted_code=submitted_code,
                                                             )
 
-    def api_proxy(self, url, post_data=None, expected_format='json.load', is_delete=False, ssl_verify=None):
+    def api_proxy(self, url, post_data=None, expected_format='json.load', is_delete=False, ssl_verify=None, access_token=None):
+        """
+        General proxy access
+        
+        If using this directly, you probably want to pass in an "access_token" kwarg in `post_data`
+        """
         response = None
         response_content = None
         if ssl_verify is None:
             ssl_verify = self.ssl_verify
+
+        # add in an access token to URLs if needed.
+        _url = url
+        if access_token:
+            _access_token = urllib.urlencode(dict(access_token=access_token))
+            if '?' not in _url:
+                _url = _url + '?' + _access_token
+            else:
+                _url = _url + '&' + _access_token
         try:
             if not post_data:
                 # normal get
-                response = requests.get(url, verify=ssl_verify)
+                response = requests.get(_url, verify=ssl_verify)
             else:
+                # todo - figure out how to specify access token here.  this probably breaks.
                 if post_data:
                     if 'batch' in post_data:
                         if isinstance(post_data['batch'], types.ListType):
@@ -201,7 +234,10 @@ class FacebookHub(object):
             raise
 
     def oauth_code__get_access_token(self, submitted_code=None, redirect_uri=None, scope=None):
-        """Gets the access token from Facebook that corresponds with a code.  This uses `requests` to open the url, so should be considered as blocking code."""
+        """
+        Gets the access token from Facebook that corresponds with a code.
+        This uses `requests` to open the url, so should be considered as blocking code.
+        """
         if submitted_code is None:
             raise ValueError('must call with submitted_code')
         if scope is None:
@@ -223,7 +259,12 @@ class FacebookHub(object):
         return access_token
 
     def oauth_code__get_access_token_and_profile(self, submitted_code=None, redirect_uri=None, scope=None):
-        """Gets the access token AND a profile from Facebook that corresponds with a code.  This method wraps a call to `oauth_code__get_access_token`, then wraps `graph__get_profile_for_access_token` which opens a json object at the url returned by `graph__url_me_for_access_token`.  This is a convenince method, since most people want to do that (at least on the initial Facebook auth.  This wraps methods which use `requests` to open urls, so should be considered as blocking code."""
+        """
+        Gets the access token AND a profile from Facebook that corresponds with a code.
+        This method wraps a call to `oauth_code__get_access_token`, then wraps `graph__get_profile_for_access_token` which opens a json object at the url returned by `graph__url_me_for_access_token`.
+        This is a convenience method, since most people want to do that (at least on the initial Facebook auth.
+        This wraps methods which use `requests` to open urls, so should be considered as blocking code.
+        """
         if submitted_code is None:
             raise ValueError('must submit a code')
         (access_token, profile) = (None, None)
@@ -238,7 +279,11 @@ class FacebookHub(object):
         return (access_token, profile)
 
     def oauth_token__url_dialog(self, redirect_uri=None, scope=None):
-        """Generates the URL for an oAuth dialog to facebook.  This flow will return the user to your website with a 'token' object as a URI hashstring.  This hashstring can not be seen by the server, it must be handled via javascript """
+        """
+        Generates the URL for an oAuth dialog to Facebook.
+        This flow will return the user to your website with a 'token' object as a URI hashstring. 
+        This hashstring can not be seen by the server, it must be handled via javascript.
+        """
         if scope is None:
             scope = self.app_scope
         if redirect_uri is None:
@@ -250,7 +295,8 @@ class FacebookHub(object):
                                                        )
 
     def oauth__url_extend_access_token(self, access_token=None):
-        """Generates the URL to extend an access token from Facebook.
+        """
+        Generates the URL to extend an access token from Facebook.
 
         see https://developers.facebook.com/roadmap/offline-access-removal/
 
@@ -274,7 +320,9 @@ class FacebookHub(object):
         )
 
     def graph__extend_access_token(self, access_token=None):
-        """ see oauth__url_extend_access_token  """
+        """
+        see `oauth__url_extend_access_token`
+        """
         if access_token is None or not access_token:
             raise ValueError('must submit access_token')
         try:
@@ -317,7 +365,10 @@ class FacebookHub(object):
         )
 
     def graph__get_profile_for_access_token(self, access_token=None, user=None, action=None):
-        """Grabs a profile for a user, corresponding to a profile, from Facebook.  This uses `requests` to open the url, so should be considered as blocking code."""
+        """
+        Grabs a profile for a user, corresponding to a profile, from Facebook.
+        This uses `requests` to open the url, so should be considered as blocking code.
+        """
         if access_token is None:
             raise ValueError('must submit access_token')
         profile = None
@@ -414,9 +465,11 @@ class FacebookHub(object):
             raise
 
     def verify_signed_request(self, signed_request=None, timeout=None):
-        """ verifies the signedRequest from Facebook.  accepts a timeout value, to test against the 'issued_at' key within the payload
+        """
+        verifies the signedRequest from Facebook. 
+        accepts a `timeout` value as a kwarg, to test against the 'issued_at' key within the payload
 
-        this will always return a Tuple of (BOOL, DICT)
+        This will always return a Tuple of (BOOL, DICT)
 
         Bool:
             True = Signed Request is verified
@@ -427,8 +480,8 @@ class FacebookHub(object):
             if request is not verified: a 'python-error' key with the reason
 
         PLEASE NOTE:
-            1. if the request is verfied, but the data is outside of the timeout, this will return FALSE as a bool; and the dict will the verified payload with an 'python-error' key.
-            2. i chose 'python-error', because facebook is likely to change their spec. they do that. the chances of them adding 'error' are much greater than 'python-error'
+            1. if the request is verified, but the data is outside of the timeout, this will return FALSE as a bool; and the dict will the verified payload with an 'python-error' key.
+            2. i chose 'python-error', because Facebook is likely to change their spec. they do that. the chances of them adding 'error' are much greater than 'python-error'
 
         Reference documentation
         https://developers.facebook.com/docs/authentication/signed_request/
@@ -482,7 +535,9 @@ class FacebookPyramid(FacebookHub):
         app_scope=None,
         app_id=None
     ):
-        """Creates a new FacebookHub object, sets it up with Pyramid Config vars, and then proxies other functions into it"""
+        """
+        Creates a new ``FacebookHub`` object, sets it up with Pyramid Config vars, and then proxies other functions into it.
+        """
         self.request = request
 
         if fb_graph_api_version is None and 'facebook.graph_api_version' in request.registry.settings:

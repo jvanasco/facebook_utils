@@ -2,9 +2,8 @@ import datetime
 
 
 class ApiError(Exception):
-
-    """ Handle the facebook api errors
-
+    """
+    Base class for handling the Facebook API errors.
     """
 
     code = None
@@ -34,22 +33,22 @@ class ApiError(Exception):
 
 
 class ApiAuthError(ApiError):
-    """ Facebook api authentification error
-
+    """
+    Facebook api authentification error
     """
     pass
 
 
 class ApiAuthExpiredError(ApiAuthError):
-    """ Facebook api authentification error due to expiry
-
+    """
+    Facebook api authentification error due to expiry
     """
     pass
 
 
 class ApiApplicationError(ApiError):
-    """ Application set up error
-
+    """
+    Application set up error
     """
     pass
 
@@ -140,5 +139,5 @@ def reformat_error(json_string, raised=None):
 
 
 def facebook_time(fb_time):
-    """parses facebook's timestamp into a datetime object"""
+    """parses Facebook's timestamp into a datetime object"""
     return datetime.datetime.strptime(fb_time, '%Y-%m-%dT%H:%M:%S+0000')
