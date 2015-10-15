@@ -91,8 +91,8 @@ class FacebookHub(object):
             redirect_uri = self.oauth_code_redirect_uri
 
         return FacebookApiUrls.oauth_code__url_dialog(app_id=self.app_id,
-                                                      scope=scope,
                                                       redirect_uri=redirect_uri,
+                                                      scope=scope,
                                                       auth_type=auth_type,
                                                       )
 
@@ -278,11 +278,16 @@ class FacebookHub(object):
             raise
         return (access_token, profile)
 
-    def oauth_token__url_dialog(self, redirect_uri=None, scope=None):
+    def oauth_token__url_dialog(self, redirect_uri=None, scope=None, auth_type=None):
         """
         Generates the URL for an oAuth dialog to Facebook.
         This flow will return the user to your website with a 'token' object as a URI hashstring. 
         This hashstring can not be seen by the server, it must be handled via javascript.
+
+        Note on `auth_type` 
+        Facebook's API requires `auth_type=rerequest` for re-requested attributes
+        via https://developers.facebook.com/docs/facebook-login/permissions/v2.5#adding
+            "If someone has declined a permission for your app, the login dialog won't let your app re-request the permission unless you pass auth_type=rerequest along with your request."
         """
         if scope is None:
             scope = self.app_scope
@@ -292,6 +297,7 @@ class FacebookHub(object):
         return FacebookApiUrls.oauth_token__url_dialog(app_id=self.app_id,
                                                        redirect_uri=redirect_uri,
                                                        scope=scope,
+                                                      auth_type=auth_type,
                                                        )
 
     def oauth__url_extend_access_token(self, access_token=None):

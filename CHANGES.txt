@@ -1,3 +1,10 @@
+0.40.1 (2015-10-15)
+------------------
+- added auth_type to FacebookApiUrls.oauth_token__url_dialog
+- fixed how auth_type is appended to urls
+- BREAKING CHANGE FacebookApiUrls.oauth_code__url_dialog now expects `redirect_uri, scope` NOT `scope, redirect_uri`.  this is the only place in the code where `scope` preceded `redirect_uri`.
+
+
 0.30.3 (2015-10-08)
 ------------------
 - added `auth_type` to `oauth_code__url_dialog` methods (see https://developers.facebook.com/docs/facebook-login/permissions/v2.5#adding)

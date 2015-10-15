@@ -10,13 +10,12 @@ FB_URL = 'https://www.facebook.com'
 class FacebookApiUrls(object):
 
     @classmethod
-    def oauth_code__url_dialog(cls, app_id, scope, redirect_uri, auth_type=''):
-        if auth_type:
-            auth_type = '&auth_type=%s' % auth_type
+    def oauth_code__url_dialog(cls, app_id, redirect_uri, scope, auth_type=''):
+        auth_type = '&auth_type=%s' % auth_type if auth_type else ''
         return u'{fb_url}/dialog/oauth?client_id={app_id}&scope={scope}&redirect_uri={redirect_uri}{auth_type}'.format(fb_url=FB_URL,
                                                                                                                        app_id=app_id,
-                                                                                                                       scope=scope,
                                                                                                                        redirect_uri=urllib.quote(redirect_uri),
+                                                                                                                       scope=scope,
                                                                                                                        auth_type=auth_type,
                                                                                                                        )
 
@@ -30,11 +29,13 @@ class FacebookApiUrls(object):
                                                                                                                                                  )
 
     @classmethod
-    def oauth_token__url_dialog(cls, app_id, redirect_uri, scope):
+    def oauth_token__url_dialog(cls, app_id, redirect_uri, scope, auth_type=''):
+        auth_type = '&auth_type=%s' % auth_type if auth_type else ''
         return u'{fb_url}/dialog/oauth?client_id={app_id}&scope={scope}&redirect_uri={redirect_uri}&response_type=token'.format(fb_url=FB_URL,
                                                                                                                                 app_id=app_id,
                                                                                                                                 redirect_uri=urllib.quote(redirect_uri),
                                                                                                                                 scope=scope,
+                                                                                                                                auth_type=auth_type,
                                                                                                                                 )
 
     @classmethod
