@@ -22,7 +22,7 @@ setup(
     name='facebook_utils',
     author='Jonathan Vanasco',
     author_email='jonathan@findmeon.com',
-    version='0.40.1',
+    version='0.40.2',
     url='http://github.com/jvanasco/facebook_utils',
     description='simple utilites for facebook integration.',
     long_description=get_docs(),

@@ -545,24 +545,25 @@ class FacebookPyramid(FacebookHub):
         Creates a new ``FacebookHub`` object, sets it up with Pyramid Config vars, and then proxies other functions into it.
         """
         self.request = request
+        registry_settings = request.registry.settings
 
-        if fb_graph_api_version is None and 'facebook.graph_api_version' in request.registry.settings:
-            fb_graph_api_version = request.registry.settings['facebook.graph_api_version']
+        if fb_graph_api_version is None and 'facebook.graph_api_version' in registry_settings:
+            fb_graph_api_version = registry_settings['facebook.graph_api_version']
 
-        if app_id is None and 'facebook.app.id' in request.registry.settings:
-            app_id = request.registry.settings['facebook.app.id']
-        if app_secret is None and 'facebook.app.secret' in request.registry.settings:
-            app_secret = request.registry.settings['facebook.app.secret']
-        if app_scope is None and 'facebook.app.scope' in request.registry.settings:
-            app_scope = request.registry.settings['facebook.app.scope']
+        if app_id is None and 'facebook.app.id' in registry_settings:
+            app_id = registry_settings['facebook.app.id']
+        if app_secret is None and 'facebook.app.secret' in registry_settings:
+            app_secret = registry_settings['facebook.app.secret']
+        if app_scope is None and 'facebook.app.scope' in registry_settings:
+            app_scope = registry_settings['facebook.app.scope']
         if app_domain is None:
-            app_domain = request.registry.settings['app_domain']
-        if oauth_code_redirect_uri is None and 'facebook.app.oauth_code_redirect_uri' in request.registry.settings:
-            oauth_code_redirect_uri = request.registry.settings['facebook.app.oauth_code_redirect_uri']
-        if oauth_token_redirect_uri is None and 'facebook.app.oauth_token_redirect_uri' in request.registry.settings:
-            oauth_token_redirect_uri = request.registry.settings['facebook.app.oauth_token_redirect_uri']
-        if ssl_verify is None and 'facebook.app.ssl_verify' in request.registry.settings:
-            ssl_verify = request.registry.settings['facebook.app.ssl_verify']
+            app_domain = registry_settings['app_domain']
+        if oauth_code_redirect_uri is None and 'facebook.app.oauth_code_redirect_uri' in registry_settings:
+            oauth_code_redirect_uri = registry_settings['facebook.app.oauth_code_redirect_uri']
+        if oauth_token_redirect_uri is None and 'facebook.app.oauth_token_redirect_uri' in registry_settings:
+            oauth_token_redirect_uri = registry_settings['facebook.app.oauth_token_redirect_uri']
+        if ssl_verify is None and 'facebook.app.ssl_verify' in registry_settings:
+            ssl_verify = registry_settings['facebook.app.ssl_verify']
 
         FacebookHub.__init__(self,
                              app_id=app_id,
