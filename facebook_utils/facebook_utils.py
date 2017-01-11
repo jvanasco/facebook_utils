@@ -25,6 +25,14 @@ from facebook_exceptions import *
 DEBUG = False
 
 
+def require_authenticated_hub(wrapped_func):
+    def wrapper(self):
+        if self.unauthenticated_hub:
+            raise AuthenticatedHubRequired()
+        return wrapped_func
+    return wrapper
+
+
 class FacebookHub(object):
     app_id = None
     app_secret = None
@@ -35,6 +43,7 @@ class FacebookHub(object):
     debug_error = False
     mask_unhandled_exceptions = False
     ssl_verify = True
+    unauthenticated_hub = False
 
     def __init__(self,
                  mask_unhandled_exceptions=False,
@@ -47,6 +56,7 @@ class FacebookHub(object):
                  ssl_verify=True,
                  app_scope=None,
                  app_id=None,
+                 unauthenticated_hub=None,
                  ):
         """
         Initialize the ``FacebookHub`` object with some variables.
@@ -54,9 +64,15 @@ class FacebookHub(object):
         required kwargs:
             `app_id`
             `app_secret`
+
+            or
+            `unauthenticated_hub=True`
         """
-        if app_id is None or app_secret is None:
-            raise ValueError("Must initialize FacebookHub() with an app_id and an app_secret")
+        if unauthenticated_hub is True:
+            self.unauthenticated_hub = True
+        else:
+            if app_id is None or app_secret is None:
+                raise ValueError("Must initialize FacebookHub() with an app_id and an app_secret")
 
         if fb_grap_api_version is None:
             self.fb_graph_api = FB_GRAPH_API_URL
@@ -75,12 +91,13 @@ class FacebookHub(object):
         self.app_scope = app_scope
         self.app_id = app_id
 
+    @require_authenticated_hub
     def oauth_code__url_dialog(self, redirect_uri=None, scope=None, auth_type=None,):
         """
-        Generates the URL for an oAuth dialog to Facebook for a "code" flow.  
+        Generates the URL for an oAuth dialog to Facebook for a "code" flow.
         This flow will return the user to your website with a 'code' object in a query param.
 
-        Note on `auth_type` 
+        Note on `auth_type`
         Facebook's API requires `auth_type=rerequest` for re-requested attributes
         via https://developers.facebook.com/docs/facebook-login/permissions/v2.5#adding
             "If someone has declined a permission for your app, the login dialog won't let your app re-request the permission unless you pass auth_type=rerequest along with your request."
@@ -96,6 +113,7 @@ class FacebookHub(object):
                                                       auth_type=auth_type,
                                                       )
 
+    @require_authenticated_hub
     def oauth_code__url_access_token(self, submitted_code=None, redirect_uri=None, scope=None):
         """
         Generates the URL to grab an access token from Facebook.
@@ -117,10 +135,10 @@ class FacebookHub(object):
                                                             submitted_code=submitted_code,
                                                             )
 
-    def api_proxy(self, url, post_data=None, expected_format='json.load', is_delete=False, ssl_verify=None, access_token=None):
+    def api_proxy(self, url, post_data=None, expected_format='json.load', is_delete=False, ssl_verify=None, access_token=None, get_data=None):
         """
         General proxy access
-        
+
         If using this directly, you probably want to pass in an "access_token" kwarg in `post_data`
         """
         response = None
@@ -139,7 +157,7 @@ class FacebookHub(object):
         try:
             if not post_data:
                 # normal get
-                response = requests.get(_url, verify=ssl_verify)
+                response = requests.get(_url, params=get_data, verify=ssl_verify)
             else:
                 # todo - figure out how to specify access token here.  this probably breaks.
                 if post_data:
@@ -233,6 +251,7 @@ class FacebookHub(object):
                 raise ApiUnhandledError(raised=e)
             raise
 
+    @require_authenticated_hub
     def oauth_code__get_access_token(self, submitted_code=None, redirect_uri=None, scope=None):
         """
         Gets the access token from Facebook that corresponds with a code.
@@ -258,6 +277,7 @@ class FacebookHub(object):
             raise
         return access_token
 
+    @require_authenticated_hub
     def oauth_code__get_access_token_and_profile(self, submitted_code=None, redirect_uri=None, scope=None):
         """
         Gets the access token AND a profile from Facebook that corresponds with a code.
@@ -278,13 +298,14 @@ class FacebookHub(object):
             raise
         return (access_token, profile)
 
+    @require_authenticated_hub
     def oauth_token__url_dialog(self, redirect_uri=None, scope=None, auth_type=None):
         """
         Generates the URL for an oAuth dialog to Facebook.
-        This flow will return the user to your website with a 'token' object as a URI hashstring. 
+        This flow will return the user to your website with a 'token' object as a URI hashstring.
         This hashstring can not be seen by the server, it must be handled via javascript.
 
-        Note on `auth_type` 
+        Note on `auth_type`
         Facebook's API requires `auth_type=rerequest` for re-requested attributes
         via https://developers.facebook.com/docs/facebook-login/permissions/v2.5#adding
             "If someone has declined a permission for your app, the login dialog won't let your app re-request the permission unless you pass auth_type=rerequest along with your request."
@@ -300,6 +321,7 @@ class FacebookHub(object):
                                                       auth_type=auth_type,
                                                        )
 
+    @require_authenticated_hub
     def oauth__url_extend_access_token(self, access_token=None):
         """
         Generates the URL to extend an access token from Facebook.
@@ -325,6 +347,7 @@ class FacebookHub(object):
             access_token=access_token
         )
 
+    @require_authenticated_hub
     def graph__extend_access_token(self, access_token=None):
         """
         see `oauth__url_extend_access_token`
@@ -338,9 +361,11 @@ class FacebookHub(object):
             raise
         return response
 
+    @require_authenticated_hub
     def graph__url_me(self, access_token):
         raise ValueError('Deprecated; call graph__url_me_for_access_token instead')
 
+    @require_authenticated_hub
     def graph__url_me_for_access_token(self, access_token=None):
         if access_token is None:
             raise ValueError('must submit access_token')
@@ -350,6 +375,7 @@ class FacebookHub(object):
             access_token=access_token
         )
 
+    @require_authenticated_hub
     def graph__url_user_for_access_token(self, access_token=None, user=None, action=None):
         if access_token is None:
             raise ValueError('must submit access_token')
@@ -370,6 +396,7 @@ class FacebookHub(object):
             action=None
         )
 
+    @require_authenticated_hub
     def graph__get_profile_for_access_token(self, access_token=None, user=None, action=None):
         """
         Grabs a profile for a user, corresponding to a profile, from Facebook.
@@ -397,12 +424,14 @@ class FacebookHub(object):
             raise
         return profile
 
+    @require_authenticated_hub
     def graph__get_profile(
         self,
         access_token=None
     ):
         raise ValueError('Deprecated; call graph__get_profile_for_access_token instead')
 
+    @require_authenticated_hub
     def graph__action_create(
         self,
         access_token=None,
@@ -430,6 +459,7 @@ class FacebookHub(object):
         except:
             raise
 
+    @require_authenticated_hub
     def graph__action_list(
         self,
         access_token=None,
@@ -450,6 +480,7 @@ class FacebookHub(object):
         except:
             raise
 
+    @require_authenticated_hub
     def graph__action_delete(self, access_token=None, action_id=None):
         if not all((access_token, action_id)):
             raise ValueError('must submit action_id')
@@ -470,9 +501,10 @@ class FacebookHub(object):
         except:
             raise
 
+    @require_authenticated_hub
     def verify_signed_request(self, signed_request=None, timeout=None):
         """
-        verifies the signedRequest from Facebook. 
+        verifies the signedRequest from Facebook.
         accepts a `timeout` value as a kwarg, to test against the 'issued_at' key within the payload
 
         This will always return a Tuple of (BOOL, DICT)
@@ -576,16 +608,19 @@ class FacebookPyramid(FacebookHub):
                              fb_grap_api_version=fb_graph_api_version,
                              )
 
+    @require_authenticated_hub
     def oauth_code__url_access_token(self, submitted_code=None, redirect_uri=None, scope=None):
         if submitted_code is None:
             submitted_code = self.request.params.get('code')
         return FacebookHub.oauth_code__url_access_token(self, submitted_code=submitted_code, redirect_uri=redirect_uri, scope=scope)
 
+    @require_authenticated_hub
     def oauth_code__get_access_token(self, submitted_code=None, redirect_uri=None, scope=None):
         if submitted_code is None:
             submitted_code = self.request.params.get('code')
         return FacebookHub.oauth_code__get_access_token(self, submitted_code=submitted_code, redirect_uri=redirect_uri, scope=scope)
 
+    @require_authenticated_hub
     def oauth_code__get_access_token_and_profile(self, submitted_code=None, redirect_uri=None, scope=None):
         if submitted_code is None:
             submitted_code = self.request.params.get('code')

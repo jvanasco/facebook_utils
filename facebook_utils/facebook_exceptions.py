@@ -122,6 +122,13 @@ class ApiUnhandledError(ApiError):
         return "ApiError: %s " % (self.raised)
 
 
+class AuthenticatedHubRequired(Exception):
+    """
+    raised when an unauthenticated hub tries to perform an authenticated function
+    """
+    pass
+
+
 def reformat_error(json_string, raised=None):
 
     rval = {'message': None,

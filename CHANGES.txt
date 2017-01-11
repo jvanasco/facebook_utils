@@ -1,3 +1,10 @@
+0.40.3 (2017-01-11/unreleased)
+------------------
+- support for non-authenticated queries (such as opengraph lookups)
+- api_proxy now supports `get_data` kwarg, which is passed into the `requests` library as `params`.
+- FacebookHub now accepts an `unauthenticated_hub` argument
+- cleaned up some whitespace
+
 0.40.2 (2015-10-15)
 ------------------
 - aliased `request.registry.settings` to `registry_settings` on setup.

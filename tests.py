@@ -5,7 +5,7 @@ import pdb
 import facebook_utils as fb
 
 
-class TestFacebookUtils(unittest.TestCase):
+class TestFacebookUtils_Authenticated(unittest.TestCase):
     PYTHON_FB_UTILS_ACCESS_TOKEN = None
 
     def _newHub(self):
@@ -110,3 +110,43 @@ class TestFacebookUtils(unittest.TestCase):
         }
         fb_data = hub.api_proxy(url="""https://graph.facebook.com""", expected_format='json.load', post_data=fb_post_data)
         self.assertTrue(fb_data)
+
+
+class TestFacebookUtils_UnAuthenticated(unittest.TestCase):
+
+    def _newHub(self):
+        """
+        this is for unauthenticated tests
+        """
+        env = os.environ
+        hub = fb.FacebookHub(unauthenticated_hub=True)
+        return hub
+    
+    def test_graph__get_object_single(self):
+        urls = {'http://example.com': '389691382139',
+                }
+        url = urls.keys()[0]
+        hub = self._newHub()
+        get_data = {'ids': url,
+                    }
+        fb_data = hub.api_proxy(url="""https://graph.facebook.com""", expected_format='json.load', get_data=get_data)
+        self.assertIn(url, fb_data)
+        self.assertIn('og_object', fb_data[url])
+        self.assertIn('id', fb_data[url]['og_object'])
+        self.assertEquals(fb_data[url]['og_object']['id'], urls[url])
+
+    def test_graph__get_object_multiple(self):
+        # url: facebook opengraph id
+        urls = {'http://example.com': '389691382139',
+                'http://facebook.com': '10151063484068358',
+                'https://facebook.com': '10151063484068358',
+                }
+        hub = self._newHub()
+        get_data = {'ids': ','.join(urls.keys()),
+                    }
+        fb_data = hub.api_proxy(url="""https://graph.facebook.com""", expected_format='json.load', get_data=get_data)
+        for url in urls.keys():
+            self.assertIn(url, fb_data)
+            self.assertIn('og_object', fb_data[url])
+            self.assertIn('id', fb_data[url]['og_object'])
+            self.assertEquals(fb_data[url]['og_object']['id'], urls[url])

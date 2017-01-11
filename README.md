@@ -70,6 +70,23 @@ not-at-all should you simply want to do all your integration in JavaScript.
 if you store the access token
 
 
+Unauthenticated Queries
+=========================
+
+Queries without authentication required can be performed using the `.api_proxy` 
+method.
+
+If you don't have any authentication data, you can create an unauthenticated 
+hub, which allows you to leverage this library for streamlined requests and
+response processing.
+
+    hub = FacebookHub(unauthenticated_hub=True)
+    get_data = {'ids': "http://example.com", }
+    fb_data = hub.api_proxy(url="""https://graph.facebook.com""",
+        expected_format='json.load', get_data=get_data)
+    pprint.pprint(fb_data)
+
+
 Notes
 =====
 Most methods will let you override the 'scope' and 'request_uri'.  This
@@ -82,48 +99,48 @@ define some variables in your .ini files:
 
 file: development.ini
 
-	facebook.app.id = 123
-	facebook.app.secret = 123
-	facebook.app.scope = email, user_birthday, user_checkins, offline_access
-	facebook.app.oauth_code_redirect_uri = http://127.0.0.1:5010/facebook-oauth-redirect
+    facebook.app.id = 123
+    facebook.app.secret = 123
+    facebook.app.scope = email, user_birthday, user_checkins, offline_access
+    facebook.app.oauth_code_redirect_uri = http://127.0.0.1:5010/facebook-oauth-redirect
 
 
 integrate into your handlers:
 
-	from facebook_utils import FacebookPyramid
+    from facebook_utils import FacebookPyramid
 
-	class WebAccount(base.Handler):
-		def __new_fb_object(self):
-			"Create a new Facebook Object"
-			# note that we can override settings in the .ini files
-			oauth_code_redirect_uri= "http://%(app_domain)s/account/facebook-authenticate-oauth?response_type=code" % {'app_domain': self.request.registry.settings['app_domain']}
-			oauth_token_redirect_uri= "http://%(app_domain)s/account/facebook-authenticate-oauth-token?response_type=token" % {'app_domain': self.request.registry.settings['app_domain']}
-			fb= FacebookPyramid(self.request, oauth_code_redirect_uri=oauth_code_redirect_uri)
-			return fb
+    class WebAccount(base.Handler):
+        def __new_fb_object(self):
+            "Create a new Facebook Object"
+            # note that we can override settings in the .ini files
+            oauth_code_redirect_uri= "http://%(app_domain)s/account/facebook-authenticate-oauth?response_type=code" % {'app_domain': self.request.registry.settings['app_domain']}
+            oauth_token_redirect_uri= "http://%(app_domain)s/account/facebook-authenticate-oauth-token?response_type=token" % {'app_domain': self.request.registry.settings['app_domain']}
+            fb= FacebookPyramid(self.request, oauth_code_redirect_uri=oauth_code_redirect_uri)
+            return fb
 
-		def sign_up(self):
-			"sign up page, which contains a "signup with facebook link"
-			fb= self.__new_fb_object()
-			return {"project":"MyApp", 'facebook_pyramid':facebook}
+        def sign_up(self):
+            "sign up page, which contains a "signup with facebook link"
+            fb= self.__new_fb_object()
+            return {"project":"MyApp", 'facebook_pyramid':facebook}
 
-		@action(renderer="web/account/facebook_authenticate_oauth.html")
-		def facebook_authenticate_oauth(self):
-			fb= self.__new_fb_object()
-			(access_token, profile)= fb.oauth_code__get_access_token_and_profile(self.request)
-			if profile:
-				# congrats, they logged in
-				# register the user to your db
-				raise HTTPFound(location='/account/home')
-			else:
-				# boo, that didn't work
-				raise HTTPFound(location='/account/sign-up?error=facebook-oauth-failure')
-			return {"project":"MyApp"}
+        @action(renderer="web/account/facebook_authenticate_oauth.html")
+        def facebook_authenticate_oauth(self):
+            fb= self.__new_fb_object()
+            (access_token, profile)= fb.oauth_code__get_access_token_and_profile(self.request)
+            if profile:
+                # congrats, they logged in
+                # register the user to your db
+                raise HTTPFound(location='/account/home')
+            else:
+                # boo, that didn't work
+                raise HTTPFound(location='/account/sign-up?error=facebook-oauth-failure')
+            return {"project":"MyApp"}
 
 
 integrate into your template:
-			<a class="fancy_button-1" id="signup-start_btn-facebook" href="${facebook_pyramid.oauth_code__url_dialog()}">
-				Connect with <strong>Facebook</strong>
-			</a>
+            <a class="fancy_button-1" id="signup-start_btn-facebook" href="${facebook_pyramid.oauth_code__url_dialog()}">
+                Connect with <strong>Facebook</strong>
+            </a>
 
 Graph Operations
 ================
@@ -144,24 +161,27 @@ contextual subclass of the that exception class.
 
 The current exception class inheritance is:
 
-	ApiError
-		ApiAuthError
-			ApiAuthExpiredError
-		ApiApplicationError
-		ApiResponseError
-		ApiRuntimeError
-			ApiRuntimeVerirficationFormatError
-			ApiRuntimeGrantError
-			ApiRuntimeScopeError
-			ApiRuntimeGraphMethodError
-		ApiUnhandledError
+    ApiError
+        ApiAuthError
+            ApiAuthExpiredError
+        ApiApplicationError
+        ApiResponseError
+        ApiRuntimeError
+            ApiRuntimeVerirficationFormatError
+            ApiRuntimeGrantError
+            ApiRuntimeScopeError
+            ApiRuntimeGraphMethodError
+        ApiUnhandledError
+    AuthenticatedHubRequired
 
 `ApiError` instances contain:
-	code (facebook specific, not http code)
-	type (as dictacted by facebook)
-	message (possibly dictated by facebook)
-	raised (the trapped error that raised this, if available)
-	response (the repsonse in error, if available)
+    code (facebook specific, not http code)
+    type (as dictacted by facebook)
+    message (possibly dictated by facebook)
+    raised (the trapped error that raised this, if available)
+    response (the repsonse in error, if available)
+
+`AuthenticatedHubRequired` will be raised if a non-authenticated hub tries to perform authenticated actions
 
 the `api_proxy` will catch *most* errors.  since this is in development,
 i'm raising uncaught exceptions.  There will be a future "ApiUnhandledError"
@@ -172,17 +192,17 @@ Unit Tests
 
 Unit Tests require the following environment vars to be set:
 
-	PYTHON_FB_UTILS_APP_ID
-	PYTHON_FB_UTILS_APP_SECRET
-	PYTHON_FB_UTILS_APP_SCOPE
-	PYTHON_FB_UTILS_ACCESS_TOKEN
+    PYTHON_FB_UTILS_APP_ID
+    PYTHON_FB_UTILS_APP_SECRET
+    PYTHON_FB_UTILS_APP_SCOPE
+    PYTHON_FB_UTILS_ACCESS_TOKEN
 
 it should be simple...
 
-	export PYTHON_FB_UTILS_APP_ID="app_id_from_facebook.com"
-	export PYTHON_FB_UTILS_APP_SECRET="app_secret_from_facebook.com"
-	export PYTHON_FB_UTILS_APP_SCOPE="email,user_activities,user_status,read_stream"
-	export PYTHON_FB_UTILS_ACCESS_TOKEN="from_API_operations"
+    export PYTHON_FB_UTILS_APP_ID="app_id_from_facebook.com"
+    export PYTHON_FB_UTILS_APP_SECRET="app_secret_from_facebook.com"
+    export PYTHON_FB_UTILS_APP_SCOPE="email,user_activities,user_status,read_stream"
+    export PYTHON_FB_UTILS_ACCESS_TOKEN="from_API_operations"
 
 ToDo
 =======
