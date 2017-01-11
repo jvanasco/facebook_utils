@@ -123,7 +123,7 @@ class TestFacebookUtils_UnAuthenticated(unittest.TestCase):
         return hub
     
     def test_graph__get_object_single(self):
-        urls = {'http://example.com': '389691382139',
+        urls = {'https://example.com': '482839044422',
                 }
         url = urls.keys()[0]
         hub = self._newHub()
@@ -134,10 +134,15 @@ class TestFacebookUtils_UnAuthenticated(unittest.TestCase):
         self.assertIn('og_object', fb_data[url])
         self.assertIn('id', fb_data[url]['og_object'])
         self.assertEquals(fb_data[url]['og_object']['id'], urls[url])
+        
+        # make sure we tracked a _last_response
+        self.assertTrue(hub._last_response)
+        self.assertIsNone(hub.last_response_ratelimited())
 
     def test_graph__get_object_multiple(self):
         # url: facebook opengraph id
-        urls = {'http://example.com': '389691382139',
+        urls = {'http://example.com': '395320319544',
+                'https://example.com': '482839044422',
                 'http://facebook.com': '10151063484068358',
                 'https://facebook.com': '10151063484068358',
                 }
@@ -150,3 +155,5 @@ class TestFacebookUtils_UnAuthenticated(unittest.TestCase):
             self.assertIn('og_object', fb_data[url])
             self.assertIn('id', fb_data[url]['og_object'])
             self.assertEquals(fb_data[url]['og_object']['id'], urls[url])
+
+

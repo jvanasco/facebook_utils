@@ -4,6 +4,8 @@
 - api_proxy now supports `get_data` kwarg, which is passed into the `requests` library as `params`.
 - FacebookHub now accepts an `unauthenticated_hub` argument
 - cleaned up some whitespace
+- stashing last-repsonse for later inspection
+- supporting inspection of `last_response_ratelimited`
 
 0.40.2 (2015-10-15)
 ------------------

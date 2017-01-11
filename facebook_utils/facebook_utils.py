@@ -44,6 +44,8 @@ class FacebookHub(object):
     mask_unhandled_exceptions = False
     ssl_verify = True
     unauthenticated_hub = False
+    
+    _last_response = None
 
     def __init__(self,
                  mask_unhandled_exceptions=False,
@@ -135,6 +137,13 @@ class FacebookHub(object):
                                                             submitted_code=submitted_code,
                                                             )
 
+    def last_response_ratelimited(self):
+        if self._last_response:
+            if self._last_response.headers:
+                if 'X-Page-Usage' in self._last_response.headers:
+                    return json.loads(self._last_response.headers['X-Page-Usage'])
+        return None
+
     def api_proxy(self, url, post_data=None, expected_format='json.load', is_delete=False, ssl_verify=None, access_token=None, get_data=None):
         """
         General proxy access
@@ -168,7 +177,13 @@ class FacebookHub(object):
                     response = requests.delete(url, data=post_data, verify=ssl_verify)
                 else:
                     response = requests.post(url, data=post_data, verify=ssl_verify)
+
+            # store the response for possible later debugging by user
+            # e.g. `response.headers['X-FB-Debug']`
+            self._last_response = response
+
             response_content = response.text
+
             if response.status_code == 200:
                 if expected_format in ('json.load', 'json.loads'):
                     response_content = json.loads(response_content)

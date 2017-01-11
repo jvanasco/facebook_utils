@@ -87,6 +87,32 @@ response processing.
     pprint.pprint(fb_data)
 
 
+Rate Limiting?
+=========================
+
+Facebook may ratelimit requests.
+
+* see https://developers.facebook.com/docs/graph-api/advanced/rate-limiting
+
+The last response is stored `FacebookHub._last_response` for inspection.
+
+A convenience method will check for the `X-Page-Usage` ratelimiting header:
+
+    print hub.last_response_ratelimited()
+    
+If no ratelimiting is set, it will return None.
+
+If facebook has set ratelimiting, it will convert the JSON-formatted string in 
+the header into a python dict:
+
+    print hub.last_response_ratelimited()
+    > {"call_count"    : x, 
+       "total_time"    : y, 
+       "total_cputime" : z
+       }
+
+
+
 Notes
 =====
 Most methods will let you override the 'scope' and 'request_uri'.  This
