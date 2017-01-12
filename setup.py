@@ -1,6 +1,16 @@
 import os
+import re
 from setuptools import setup
 from setuptools import find_packages
+
+# store version in the init.py
+with open(
+        os.path.join(
+            os.path.dirname(__file__),
+            'facebook_utils', '__init__.py')) as v_file:
+    VERSION = re.compile(
+        r".*__VERSION__ = '(.*?)'",
+        re.S).match(v_file.read()).group(1)
 
 def get_docs():
     result = []
@@ -22,7 +32,7 @@ setup(
     name='facebook_utils',
     author='Jonathan Vanasco',
     author_email='jonathan@findmeon.com',
-    version='0.40.3',
+    version=VERSION,
     url='http://github.com/jvanasco/facebook_utils',
     description='simple utilites for facebook integration.',
     long_description=get_docs(),

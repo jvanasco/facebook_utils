@@ -1,3 +1,9 @@
+0.40.4 (2017-01-11)
+------------------
+- packaging fix
+- flake8
+- version number now in library itself
+
 0.40.3 (2017-01-11)
 ------------------
 - support for non-authenticated queries (such as opengraph lookups)

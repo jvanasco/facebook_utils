@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 
-import datetime
 import requests
 import urlparse
 import urllib
@@ -11,6 +10,7 @@ import types
 import time
 import hmac
 import cgi
+from functools import wraps
 
 try:
     import simplejson as json
@@ -25,14 +25,14 @@ from facebook_exceptions import *
 DEBUG = False
 
 
-def require_authenticated_hub(wrapped_func):
-    """simple decorator for FacebookHub methods.
-    todo: use functools.partials
+def require_authenticated_hub(f):
+    """simple decorator for FacebookHub class methods.
     """
+    @wraps(f)
     def wrapper(self, *args, **kwargs):
         if self.unauthenticated_hub:
             raise AuthenticatedHubRequired()
-        return wrapped_func(self, *args, **kwargs)
+        return f(self, *args, **kwargs)
     return wrapper
 
 
@@ -47,7 +47,7 @@ class FacebookHub(object):
     mask_unhandled_exceptions = False
     ssl_verify = True
     unauthenticated_hub = False
-    
+
     _last_response = None
 
     def __init__(self,
@@ -255,15 +255,15 @@ class FacebookHub(object):
                             if ('type' in error) and (error['type'] == 'OAuthException'):
                                 raise ApiAuthError(**error)
                             raise ApiError(**error)
-                        raise ApiError(message = 'I don\'t know how to handle this error (%s)' % rval, code=400)
+                        raise ApiError(message='I don\'t know how to handle this error (%s)' % rval, code=400)
                     except json.JSONDecodeError, e:
-                        raise ApiError(message = 'Could not parse JSON from the error (%s)' % rval, code=400, raised=e)
+                        raise ApiError(message='Could not parse JSON from the error (%s)' % rval, code=400, raised=e)
                     except:
                         raise
-                raise ApiError(message = 'Could not communicate with the API', code=response.status_code)
+                raise ApiError(message='Could not communicate with the API', code=response.status_code)
             return response_content
         except json.JSONDecodeError, e:
-            raise ApiError(message = 'Could not parse JSON from the error (%s)' % e, raised=e)
+            raise ApiError(message='Could not parse JSON from the error (%s)' % e, raised=e)
         except Exception as e:
             if self.mask_unhandled_exceptions:
                 raise ApiUnhandledError(raised=e)
@@ -336,7 +336,7 @@ class FacebookHub(object):
         return FacebookApiUrls.oauth_token__url_dialog(app_id=self.app_id,
                                                        redirect_uri=redirect_uri,
                                                        scope=scope,
-                                                      auth_type=auth_type,
+                                                       auth_type=auth_type,
                                                        )
 
     @require_authenticated_hub
