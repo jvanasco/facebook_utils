@@ -26,10 +26,13 @@ DEBUG = False
 
 
 def require_authenticated_hub(wrapped_func):
-    def wrapper(self):
+    """simple decorator for FacebookHub methods.
+    todo: use functools.partials
+    """
+    def wrapper(self, *args, **kwargs):
         if self.unauthenticated_hub:
             raise AuthenticatedHubRequired()
-        return wrapped_func
+        return wrapped_func(self, *args, **kwargs)
     return wrapper
 
 
