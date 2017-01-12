@@ -1,4 +1,4 @@
-0.40.3 (2017-01-11/unreleased)
+0.40.3 (2017-01-11)
 ------------------
 - support for non-authenticated queries (such as opengraph lookups)
 - api_proxy now supports `get_data` kwarg, which is passed into the `requests` library as `params`.
