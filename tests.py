@@ -12,14 +12,18 @@ class TestFacebookUtils_Authenticated(unittest.TestCase):
 
     def _newHub(self):
         """
-            we need the following env variables set:
-                FBUTILS_APP_ID
-                FBUTILS_APP_SECRET
-                FBUTILS_APP_SCOPE
-                FBUTILS_ACCESS_TOKEN
-                FBUTILS_APP_DOMAIN
-            This might need to be set:
-                FBUTILS_APP_SECRETPROOF
+        we need the following env variables set:
+            FBUTILS_APP_ID
+            FBUTILS_APP_SECRET
+            FBUTILS_APP_SCOPE
+            FBUTILS_APP_DOMAIN
+            FBUTILS_ACCESS_TOKEN*
+        This might need to be set:
+            FBUTILS_APP_SECRETPROOF
+            
+        Note:
+            *FBUTILS_ACCESS_TOKEN can be a user access token (vs an app or page token)
+            we just need the ability to test some actions that require an access token.
         """
         env = os.environ
         if 'FBUTILS_APP_ID' not in os.environ:

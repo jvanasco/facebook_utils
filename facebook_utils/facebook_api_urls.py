@@ -49,7 +49,7 @@ class FacebookApiUrls(object):
         return URL_OAUTH_DIALOG_CODE.format(fb_url_web=fb_url_web,
                                             app_id=app_id,
                                             redirect_uri=urllib.quote_plus(redirect_uri),
-                                            scope=scope,
+                                            scope=scope or '',
                                             auth_type=auth_type,
                                             )
 
@@ -59,7 +59,7 @@ class FacebookApiUrls(object):
         url = URL_OAUTH_DIALOG_TOKEN.format(fb_url_web=fb_url_web,
                                             app_id=app_id,
                                             redirect_uri=urllib.quote_plus(redirect_uri),
-                                            scope=scope,
+                                            scope=scope or '',
                                             auth_type=auth_type,
                                             )
         return url

@@ -671,28 +671,30 @@ class FacebookPyramid(FacebookHub):
         """
         self.request = request
         registry_settings = request.registry.settings
+        
+        fb_utils_prefix = registry_settings.get('fbutils.prefix', 'fbutils')
 
         fb_api_version = fb_api_version or FB_API_VERSION
-        if fb_api_version is None and 'fbutils.api_version' in registry_settings:
-            fb_api_version = registry_settings['fbutils.api_version']
+        if fb_api_version is None:
+            fb_api_version = registry_settings.get('%s.api_version' % fb_utils_prefix, None)
 
-        if app_id is None and 'fbutils.app.id' in registry_settings:
-            app_id = registry_settings['fbutils.app.id']
-        if app_secret is None and 'fbutils.app.secret' in registry_settings:
-            app_secret = registry_settings['fbutils.app.secret']
-        if app_secretproof is None and 'fbutils.app.secretproof' in registry_settings:
-            app_secretproof = registry_settings['fbutils.app.secretproof']
-        if app_scope is None and 'fbutils.app.scope' in registry_settings:
-            app_scope = registry_settings['fbutils.app.scope']
+        if app_id is None:
+            app_id = registry_settings.get('%s.id' % fb_utils_prefix, None)
+        if app_secret is None:
+            app_secret = registry_settings.get('%s.secret' % fb_utils_prefix, None)
+        if app_secretproof is None:
+            app_secretproof = registry_settings.get('%s.secretproof' % fb_utils_prefix, None)
+        if app_scope is None:
+            app_scope = registry_settings.get('%s.scope' % fb_utils_prefix, None)
         if app_domain is None:
-            app_domain = registry_settings['app_domain']
-        if oauth_code_redirect_uri is None and 'fbutils.app.oauth_code_redirect_uri' in registry_settings:
-            oauth_code_redirect_uri = registry_settings['fbutils.app.oauth_code_redirect_uri']
-        if oauth_token_redirect_uri is None and 'fbutils.app.oauth_token_redirect_uri' in registry_settings:
-            oauth_token_redirect_uri = registry_settings['fbutils.app.oauth_token_redirect_uri']
-        if ssl_verify is None and 'fbutils.app.ssl_verify' in registry_settings:
-            ssl_verify = registry_settings['fbutils.app.ssl_verify']
-
+            app_domain = registry_settings.get('%s.domain' % fb_utils_prefix, None)
+        if oauth_code_redirect_uri is None:
+            oauth_code_redirect_uri = registry_settings.get('%s.oauth_code_redirect_uri' % fb_utils_prefix, None)
+        if oauth_token_redirect_uri is None:
+            oauth_token_redirect_uri = registry_settings.get('%s.oauth_token_redirect_uri' % fb_utils_prefix, None)
+        if ssl_verify is None:
+            ssl_verify = registry_settings.get('%s.ssl_verify' % fb_utils_prefix, None)
+            
         FacebookHub.__init__(self,
                              app_id=app_id,
                              app_secret=app_secret,

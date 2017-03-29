@@ -18,33 +18,6 @@ make sure the app_domain is configured
     export FBUTILS_APP_SCOPE=email,publish_actions
     export FBUTILS_APP_DOMAIN=xxxxxxxxxx
     export FBUTILS_REDIRECT_URI_OAUTHCODE=https://dev.cliqued.in/in/oauth?response_type=code'
-
-
-class TestFacebookUtils_AuthenticatedFlow(unittest.TestCase, TestFacebookUtils_Authenticated):
-
-    def test_flow_a(self):
-        hub = self._newHub()
-
-        # this is tested via self.test_oauth_code__url_dialog
-        url_dialog = hub.oauth_code__url_dialog()
-        print("The URL dialog is:")
-        print("\t%s" % url_dialog)
-        
-        # if we "cancel" when visiting, the redirect is to :
-        # https://%(SERVER)s/oauth-code?error=access_denied&error_code=200&error_description=Permissions+error&error_reason=user_denied#_=_
-        # if we "accept" when visiting, the redirect is to something like this:
-        # https://%(SERVER)s/oauth-code?code=%(code)#_=_
-        
-        url_exchange = hub.oauth__url_extend_access_token(access_token=self.FBUTILS_ACCESS_TOKEN)
-        fb_data = hub.api_proxy(url=url_exchange, expected_format='json.load')
-        access_token_1 = fb_data['access_token']
-        self.assertTrue(access_token_1)
-        response = hub.graph__extend_access_token(access_token=self.FBUTILS_ACCESS_TOKEN)
-        access_token_2 = response['access_token']
-        self.assertTrue(access_token_2)
-
-
-
 """
 
 if 'FBUTILS_APP_ID' not in os.environ:
