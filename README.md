@@ -125,11 +125,11 @@ define some variables in your .ini files:
 
 file: development.ini
 
-    facebook.app.id = 123
-    facebook.app.secret = 123
-    facebook.app.scope = email, user_birthday, user_checkins, offline_access
-    facebook.app.oauth_code_redirect_uri = http://127.0.0.1:5010/facebook-oauth-redirect
-
+    fbutils.app.id = 123
+    fbutils.app.secret = 123
+    fbutils.app.scope = email, user_birthday, user_checkins, offline_access
+    fbutils.app.oauth_code_redirect_uri = http://127.0.0.1:5010/facebook-oauth-redirect
+	fbutils.api_version = v2.8
 
 integrate into your handlers:
 
@@ -218,23 +218,34 @@ Unit Tests
 
 Unit Tests require the following environment vars to be set:
 
-    PYTHON_FB_UTILS_APP_ID
-    PYTHON_FB_UTILS_APP_SECRET
-    PYTHON_FB_UTILS_APP_SCOPE
-    PYTHON_FB_UTILS_ACCESS_TOKEN
+	FBUTILS_APP_ID
+	FBUTILS_APP_SECRET
+	FBUTILS_APP_SCOPE
+	FBUTILS_ACCESS_TOKEN
+	FBUTILS_APP_DOMAIN
+	FBUTILS_APP_SECRETPROOF
 
 it should be simple...
 
-    export PYTHON_FB_UTILS_APP_ID="app_id_from_facebook.com"
-    export PYTHON_FB_UTILS_APP_SECRET="app_secret_from_facebook.com"
-    export PYTHON_FB_UTILS_APP_SCOPE="email,user_activities,user_status,read_stream"
-    export PYTHON_FB_UTILS_ACCESS_TOKEN="from_API_operations"
+    export FBUTILS_APP_ID="app_id_from_facebook.com"
+    export FBUTILS_APP_SECRET="app_secret_from_facebook.com"
+    export FBUTILS_APP_SCOPE="email,user_activities,user_status,read_stream"
+
+	export FBUTILS_APP_DOMAIN='whitelisted domain'
+    export FBUTILS_ACCESS_TOKEN="from_API_operations, or generate via developer interface"
+	export FBUTILS_APP_SECRETPROOF=set if you locked this down on facebook
+	
+There is also a `test_interactive.py` file that uses the same environment vars
+
+    python test_interactive.py
+
+
 
 ToDo
 =======
 - I think in the future, the 'dicts' that come back should be cast into a 'response' object, and there will be some metadata attached to it.
 
 
-:copyright: 2012-2013 by Jonathan Vanasco
+:copyright: 2012-2017 by Jonathan Vanasco
 license: BSD
 """

@@ -1,3 +1,18 @@
+0.50.0 (2017-03-29)
+------------------
+- updates to work with recent facebook api changes
+- - some apis now hit different endpoints
+- - some response formats have now changed
+- will now look to environment for default api version (`export FBUTILS_FB_API_VERSION=v2.8`)
+- will now look to environment for debug (`export FBUTILS_DEBUG=True`)
+- fixed typo/rename `fb_grap_api_version` > `fb_api_version`
+- redid how urls are generated for clarity
+- updated tests
+- made interactive tests public
+- now supports appsecret_proof
+- pyramid integration namespace change -- now `fbutils.`.  this is to ensure things break and people upgrade correctly
+
+
 0.40.4 (2017-01-11)
 ------------------
 - packaging fix

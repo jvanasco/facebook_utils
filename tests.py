@@ -1,41 +1,51 @@
 import unittest
 import os
 import pdb
+import pprint
+import urllib
 
 import facebook_utils as fb
 
 
 class TestFacebookUtils_Authenticated(unittest.TestCase):
-    PYTHON_FB_UTILS_ACCESS_TOKEN = None
+    FBUTILS_ACCESS_TOKEN = None
 
     def _newHub(self):
         """
             we need the following env variables set:
-                PYTHON_FB_UTILS_APP_ID
-                PYTHON_FB_UTILS_APP_SECRET
-                PYTHON_FB_UTILS_APP_SCOPE
-                PYTHON_FB_UTILS_ACCESS_TOKEN
+                FBUTILS_APP_ID
+                FBUTILS_APP_SECRET
+                FBUTILS_APP_SCOPE
+                FBUTILS_ACCESS_TOKEN
+                FBUTILS_APP_DOMAIN
+            This might need to be set:
+                FBUTILS_APP_SECRETPROOF
         """
         env = os.environ
-        if 'PYTHON_FB_UTILS_APP_ID' not in os.environ:
-            raise ValueError('Test must have PYTHON_FB_UTILS_APP_ID')
-        PYTHON_FB_UTILS_APP_ID = os.environ['PYTHON_FB_UTILS_APP_ID']
-        if 'PYTHON_FB_UTILS_APP_SECRET' not in os.environ:
-            raise ValueError('Test must have PYTHON_FB_UTILS_APP_SECRET')
-        PYTHON_FB_UTILS_APP_SECRET = os.environ['PYTHON_FB_UTILS_APP_SECRET']
-        if 'PYTHON_FB_UTILS_APP_SCOPE' not in os.environ:
-            raise ValueError('Test must have PYTHON_FB_UTILS_APP_SCOPE')
-        PYTHON_FB_UTILS_APP_SCOPE = os.environ['PYTHON_FB_UTILS_APP_SCOPE']
-        if 'PYTHON_FB_UTILS_ACCESS_TOKEN' not in os.environ:
-            raise ValueError('Test must have PYTHON_FB_UTILS_ACCESS_TOKEN')
-        self.PYTHON_FB_UTILS_ACCESS_TOKEN = os.environ['PYTHON_FB_UTILS_ACCESS_TOKEN']
+        if 'FBUTILS_APP_ID' not in os.environ:
+            raise ValueError('Test must have FBUTILS_APP_ID')
+        self.FBUTILS_APP_ID = os.environ['FBUTILS_APP_ID']
+        if 'FBUTILS_APP_SECRET' not in os.environ:
+            raise ValueError('Test must have FBUTILS_APP_SECRET')
+        self.FBUTILS_APP_SECRET = os.environ['FBUTILS_APP_SECRET']
+        if 'FBUTILS_APP_SCOPE' not in os.environ:
+            raise ValueError('Test must have FBUTILS_APP_SCOPE')
+        self.FBUTILS_APP_SCOPE = os.environ['FBUTILS_APP_SCOPE']
+        if 'FBUTILS_ACCESS_TOKEN' not in os.environ:
+            raise ValueError('Test must have FBUTILS_ACCESS_TOKEN')
+        self.FBUTILS_ACCESS_TOKEN = os.environ['FBUTILS_ACCESS_TOKEN']
+        if 'FBUTILS_APP_DOMAIN' not in os.environ:
+            raise ValueError('Test must have FBUTILS_APP_DOMAIN')
+        self.FBUTILS_APP_DOMAIN = os.environ['FBUTILS_APP_DOMAIN']
+        self.FBUTILS_APP_SECRETPROOF = os.environ.get('FBUTILS_APP_SECRETPROOF', None)
 
-        hub = fb.FacebookHub(app_id=PYTHON_FB_UTILS_APP_ID,
-                             app_secret=PYTHON_FB_UTILS_APP_SECRET,
+        hub = fb.FacebookHub(app_id=self.FBUTILS_APP_ID,
+                             app_secret=self.FBUTILS_APP_SECRET,
+                             app_secretproof=self.FBUTILS_APP_SECRETPROOF,
                              app_scope='email',
-                             app_domain='127.0.0.1',
-                             oauth_code_redirect_uri='http://127.0.0.1:5010/oauth-code',
-                             oauth_token_redirect_uri='http://127.0.0.1:5010/oauth-token'
+                             app_domain=self.FBUTILS_APP_DOMAIN,
+                             oauth_code_redirect_uri='https://%s/oauth-code' % self.FBUTILS_APP_DOMAIN,
+                             oauth_token_redirect_uri='https://%s/oauth-token' % self.FBUTILS_APP_DOMAIN,
                              )
         return hub
 
@@ -43,21 +53,30 @@ class TestFacebookUtils_Authenticated(unittest.TestCase):
         hub = self._newHub()
         url = hub.oauth_code__url_dialog()
         self.assertEqual(url,
-                         'https://www.facebook.com/dialog/oauth?client_id=%(PYTHON_FB_UTILS_APP_ID)s&scope=email&redirect_uri=http%%3A//127.0.0.1%%3A5010/oauth-code' % {'PYTHON_FB_UTILS_APP_ID': hub.app_id}
+                         'https://www.facebook.com/dialog/oauth?client_id=%(FBUTILS_APP_ID)s&scope=email&redirect_uri=https%%3A%%2F%%2F%(FBUTILS_APP_DOMAIN)s%%2Foauth-code' % 
+                            {'FBUTILS_APP_ID': hub.app_id,
+                             'FBUTILS_APP_DOMAIN': urllib.quote_plus(self.FBUTILS_APP_DOMAIN),
+                            }
                          )
 
     def test_oauth_code__url_dialog__custom_redirect(self):
         hub = self._newHub()
-        url = hub.oauth_code__url_dialog(redirect_uri='http://127.0.0.1:5010/oauth-code-custom')
+        url = hub.oauth_code__url_dialog(redirect_uri='https://%(FBUTILS_APP_DOMAIN)s/oauth-code-custom' % {'FBUTILS_APP_DOMAIN': urllib.quote_plus(self.FBUTILS_APP_DOMAIN)})
         self.assertEqual(url,
-                         'https://www.facebook.com/dialog/oauth?client_id=%(PYTHON_FB_UTILS_APP_ID)s&scope=email&redirect_uri=http%%3A//127.0.0.1%%3A5010/oauth-code-custom' % {'PYTHON_FB_UTILS_APP_ID': hub.app_id}
+                         'https://www.facebook.com/dialog/oauth?client_id=%(FBUTILS_APP_ID)s&scope=email&redirect_uri=https%%3A%%2F%%2F%(FBUTILS_APP_DOMAIN)s%%2Foauth-code-custom' % 
+                            {'FBUTILS_APP_ID': hub.app_id,
+                             'FBUTILS_APP_DOMAIN': urllib.quote_plus(self.FBUTILS_APP_DOMAIN),
+                            }
                          )
 
-    def test_oauth_code__url_custom_scrope(self):
+    def test_oauth_code__url_custom_scope(self):
         hub = self._newHub()
         url = hub.oauth_code__url_dialog(scope='email,user_birthday')
         self.assertEqual(url,
-                         'https://www.facebook.com/dialog/oauth?client_id=%(PYTHON_FB_UTILS_APP_ID)s&scope=email,user_birthday&redirect_uri=http%%3A//127.0.0.1%%3A5010/oauth-code' % {'PYTHON_FB_UTILS_APP_ID': hub.app_id}
+                         'https://www.facebook.com/dialog/oauth?client_id=%(FBUTILS_APP_ID)s&scope=email,user_birthday&redirect_uri=https%%3A%%2F%%2F%(FBUTILS_APP_DOMAIN)s%%2Foauth-code' % 
+                            {'FBUTILS_APP_ID': hub.app_id,
+                             'FBUTILS_APP_DOMAIN': urllib.quote_plus(self.FBUTILS_APP_DOMAIN),
+                            }
                          )
 
     def test_oauth_code__url_access_token__fails_without_code(self):
@@ -73,26 +92,27 @@ class TestFacebookUtils_Authenticated(unittest.TestCase):
         self.assertRaises(ValueError, lambda: hub.oauth_code__get_access_token())
 
     def test_access_token_exchange_manual(self):
+        # python -munittest tests.TestFacebookUtils_Authenticated.test_access_token_exchange_manual
         hub = self._newHub()
-        url_exchange = hub.oauth__url_extend_access_token(access_token=self.PYTHON_FB_UTILS_ACCESS_TOKEN)
-        fb_data = hub.api_proxy(url=url_exchange, expected_format='urlparse.parse_qs')
+        url_exchange = hub.oauth__url_extend_access_token(access_token=self.FBUTILS_ACCESS_TOKEN)
+        fb_data = hub.api_proxy(url=url_exchange, expected_format='json.load')
         access_token = fb_data['access_token']
         self.assertTrue(access_token)
 
     def test_access_token_exchange_graph(self):
         hub = self._newHub()
-        response = hub.graph__extend_access_token(access_token=self.PYTHON_FB_UTILS_ACCESS_TOKEN)
+        response = hub.graph__extend_access_token(access_token=self.FBUTILS_ACCESS_TOKEN)
         self.assertTrue(response['access_token'])
 
     def test_graph_me(self):
         hub = self._newHub()
-        url_me = hub.graph__url_me_for_access_token(access_token=self.PYTHON_FB_UTILS_ACCESS_TOKEN)
+        url_me = hub.graph__url_me_for_access_token(access_token=self.FBUTILS_ACCESS_TOKEN)
         fb_data = hub.api_proxy(url=url_me, expected_format='json.load')
         self.assertTrue(fb_data)
 
     def test_graph__get_profile_for_access_token(self):
         hub = self._newHub()
-        fb_data = hub.graph__get_profile_for_access_token(access_token=self.PYTHON_FB_UTILS_ACCESS_TOKEN)
+        fb_data = hub.graph__get_profile_for_access_token(access_token=self.FBUTILS_ACCESS_TOKEN)
         self.assertTrue(fb_data)
 
     def test_graph__get_batched(self):
@@ -101,7 +121,7 @@ class TestFacebookUtils_Authenticated(unittest.TestCase):
         FB_LIMIT_HOME = 1
         FB_FIELDS = 'id,from,message,comments,created_time,link,caption'
         fb_post_data = {
-            'access_token': self.PYTHON_FB_UTILS_ACCESS_TOKEN,
+            'access_token': self.FBUTILS_ACCESS_TOKEN,
             'batch': [
                 {"method": "GET", 'relative_url': "/me/permissions", },
                 {"method": "GET", 'relative_url': "/me/links", 'limit': FB_LIMIT_LINKS, 'fields': FB_FIELDS, },
