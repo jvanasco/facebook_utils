@@ -9,9 +9,10 @@
 - redid how urls are generated for clarity
 - updated tests
 - made interactive tests public
-- now supports appsecret_proof
 - pyramid integration namespace change -- now `fbutils.`.  this is to ensure things break and people upgrade correctly
 - set a custom prefix for pyramid paster integration via `fbutils.prefix`
+- now supports appsecret_proof
+- the url/payload will be inspected for app_secret; if present and the appsecret_proof is required, will augment the requests as needed. this allows for paginated urls from API results to be automatically followed
 
 """
 https://developers.facebook.com/docs/apps/changelog

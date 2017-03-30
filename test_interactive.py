@@ -66,8 +66,8 @@ def _get_code(_hub):
 #
 hub = new_fb_object()
 
-
-if False:
+# this one is a bit extended. not always needed
+if True:
     print("*" * 40)
     _code = _get_code(hub)
     print("fbutils will now try to exchange the code for an access token.")

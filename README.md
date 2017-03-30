@@ -28,6 +28,28 @@ from your .ini and pulling variables from 'request' as needed.
 `facebook_utils.FacebookHub()` can be used directly - however it will not
 pull the appropriate settings from the .ini or request.
 
+This has been a general-purpose Python client for several years.  It works well.
+
+As of v0.5.0 it supports the `appsecret_proof` lockdown on the client level.
+
+Configure a hub with the following:
+
+	hub = FacebookHub(app_id = x,
+					  app_secret = y,
+					  app_secretproof = True
+					  )
+
+Any requests to the hub will attempt to create the `appsecret_proof` hmac if it 
+is not explicitly provided.  It will be based on the `access_token` appearing as
+(in the order of precedence):
+
+* the `access_token` kwarg to the `.api_proxy() method
+* an `access_token` in the querystring of a retrieved url
+* an `access_token` in the POST payload
+
+This will allow you to follow paginated links from the API as-is, upgrading as needed
+	
+
 
 IMPORTANT NOTE
 ==============

@@ -221,17 +221,29 @@ class FacebookHub(object):
                     _url = _url + '?' + _access_token
                 else:
                     _url = _url + '&' + _access_token
-            if self.app_secretproof:
-                if 'appsecret_proof=' not in _url:
-                    _appsecret_proof = self.generate__appsecret_proof(access_token=access_token)
-                    _url = _url + '&appsecret_proof=' + _appsecret_proof
         else:
-            if post_data:
-                if 'access_token' in post_data:
-                    if 'appsecret_proof' not in post_data:
-                        _appsecret_proof = self.generate__appsecret_proof(access_token=post_data['access_token'])
-                        if _appsecret_proof:
-                            post_data['appsecret_proof'] = _appsecret_proof
+            # derive the access token if possible from the url
+            if post_data and 'access_token' in post_data:
+                access_token = post_data['access_token']
+            elif 'access_token=' in _url:
+                _parsed = urlparse.urlparse(_url)
+                if _parsed.query:
+                    _qs = urlparse.parse_qs(_parsed.query)
+                    access_token = _qs.get('access_token')  # this will be `None` or a list
+                    access_token = access_token[0] if access_token else None
+
+        if self.app_secretproof:
+            if access_token:
+                if 'access_token=' in _url:
+                    if 'appsecret_proof=' not in _url:
+                        _appsecret_proof = self.generate__appsecret_proof(access_token=access_token)
+                        _url = _url + '&appsecret_proof=' + _appsecret_proof
+                elif post_data and 'access_token' in post_data:
+                        if 'appsecret_proof' not in post_data:
+                            _appsecret_proof = self.generate__appsecret_proof(access_token=access_token)
+                            if _appsecret_proof:
+                                post_data['appsecret_proof'] = _appsecret_proof
+
         try:
             if not post_data:
                 # normal get
@@ -297,7 +309,6 @@ class FacebookHub(object):
                                     if ('type' in error) and error['type']:
                                         if error['type'] == 'GraphMethodException':
                                             raise ApiRuntimeGraphMethodError(**error)
-
                                     if ('message' in error) and error['message']:
                                         if error['message'][:32] == 'Invalid verification code format':
                                             raise ApiRuntimeVerirficationFormatError(**error)
