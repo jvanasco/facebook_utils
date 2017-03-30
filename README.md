@@ -1,43 +1,48 @@
 facebook_utils
 ~~~~~~~~~~~~
 
-A collection of utilities for integrating user accounts with Facebook.com
+A collection of utilities for integrating user accounts with Facebook.com.  
 
-right now this handles oauth and graph operations
+Right now this handles oauth login and graph API operations
+
+This has been a general-purpose Python client for several years.  It works well.
 
 Purpose
 =======
 
-1. Facebook dropped development and support of their python sdk
+1. Once upon a time, Facebook offered a Python SDK.  That dropped it. Boo.
 
-2. There are a handful of pyramid utilities that provide a complete drop-in
-integration with Facebook.com; This is NOT one of them. Sometimes you want
-to control the User Experience and have all your pages custom; if so, this
-is for you.
+2. When this was first released, there were no other Python SDKs actively developed.
+
+3. There are a handful of Pyramid/Misc Framework utilities that provide a complete
+drop-in integration with Facebook.com for account logins and integrations; 
+This is NOT one of them. Sometimes you need to control the User Experience and 
+have all your UX customized; if so, this is for you.
 
 
 Usage
 =====
 
-This was originally built/intended for use under the Pyramid environment
 
-calling `FacebookPyramid()` will create a new object that
-subclasses `FacebookHub()` objects, using  default settings
-from your .ini and pulling variables from 'request' as needed.
+All work is done via the `facebook_utils.FacebookHub()` object.
 
-`facebook_utils.FacebookHub()` can be used directly - however it will not
-pull the appropriate settings from the .ini or request.
-
-This has been a general-purpose Python client for several years.  It works well.
-
-As of v0.5.0 it supports the `appsecret_proof` lockdown on the client level.
-
-Configure a hub with the following:
+Configure a hub with something like the following:
 
 	hub = FacebookHub(app_id = x,
 					  app_secret = y,
 					  app_secretproof = True
 					  )
+
+Or make it unuthenticated. It's up to you.
+
+
+This was originally built/intended for use under the Pyramid environment.
+
+calling `FacebookPyramid()` will create a new object that subclasses 
+`FacebookHub()` objects, using  default settings from your .ini and 
+pulling variables from 'request' as needed.
+
+As of v0.5.0 it supports the `appsecret_proof` lockdown on the client level.
 
 Any requests to the hub will attempt to create the `appsecret_proof` hmac if it 
 is not explicitly provided.  It will be based on the `access_token` appearing as
@@ -50,9 +55,8 @@ is not explicitly provided.  It will be based on the `access_token` appearing as
 This will allow you to follow paginated links from the API as-is, upgrading as needed
 	
 
-
-IMPORTANT NOTE
-==============
+IMPORTANT NOTES
+===============
 
 Facebook's API Support is inconsistent with the terminology:
 
@@ -60,6 +64,8 @@ Facebook's API Support is inconsistent with the terminology:
 * The Developer Tools provide `app id` and `app secret`
 
 For the sake of clarity, this library uses the terms `app_id` and `app_secret` because they are what Facebook's developer dashboard provides.  They are translated into the API Endpoint terms as required.
+
+By default the API calls will be unversioned.  You should specify the API version.
 
 
 Supports Two oAuth Flows
