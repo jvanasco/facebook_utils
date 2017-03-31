@@ -67,6 +67,7 @@ class FacebookHub(object):
     debug_error = False
     mask_unhandled_exceptions = False
     ssl_verify = True
+    secure_only = True
     unauthenticated_hub = False
 
     # these will be urls, preferably versioned
@@ -86,6 +87,7 @@ class FacebookHub(object):
                  app_secret=None,
                  app_secretproof=None,
                  ssl_verify=True,
+                 secure_only=True,
                  app_scope=None,
                  app_id=None,
                  unauthenticated_hub=None,
@@ -125,6 +127,7 @@ class FacebookHub(object):
         self.app_secretproof = app_secretproof
         self.app_domain = app_domain
         self.ssl_verify = ssl_verify
+        self.secure_only = secure_only
         self.app_scope = app_scope
         self.app_id = app_id
 
@@ -194,9 +197,9 @@ class FacebookHub(object):
 
     def api_proxy(
         self,
-        url,
+        url=None,
         post_data=None,
-        expected_format='json.load',
+        expected_format='json.loads',
         is_delete=False,
         ssl_verify=None,
         access_token=None,
@@ -211,22 +214,43 @@ class FacebookHub(object):
         response_content = None
         if ssl_verify is None:
             ssl_verify = self.ssl_verify
+            
+        # stash the original url
+        _url_original = url
+
+        # quickly
+        if not url:
+            url = self.fb_url_graph_api
+        else:
+            _url_compare = url.lower()
+            if _url_compare[:7] == 'http://':
+                if self.secure_only:
+                    raise ApiError("This API client is configured to only work on https endpoints")
+            elif _url_compare[:8] == 'https://':
+                pass
+            else:
+                if _url_compare[0] == '/':
+                    url = self.fb_url_graph_api + url
+                else:
+                    raise ApiError("Not sure what sort of endpoint you are thinking of")
 
         # add in an access token to URLs if needed.
-        _url = url
         if access_token:
-            if 'access_token=' not in _url:
-                _access_token = urllib.urlencode(dict(access_token=access_token))
-                if '?' not in _url:
-                    _url = _url + '?' + _access_token
-                else:
-                    _url = _url + '&' + _access_token
+            if not get_data or not get_data.get('access_token'):
+                if 'access_token=' not in url:
+                    _access_token = urllib.urlencode(dict(access_token=access_token))
+                    if '?' not in url:
+                        url += '?' + _access_token
+                    else:
+                        url += '&' + _access_token
         else:
             # derive the access token if possible from the url
             if post_data and 'access_token' in post_data:
                 access_token = post_data['access_token']
-            elif 'access_token=' in _url:
-                _parsed = urlparse.urlparse(_url)
+            elif get_data and 'access_token' in get_data:
+                access_token = get_data['access_token']
+            elif 'access_token=' in url:
+                _parsed = urlparse.urlparse(url)
                 if _parsed.query:
                     _qs = urlparse.parse_qs(_parsed.query)
                     access_token = _qs.get('access_token')  # this will be `None` or a list
@@ -234,10 +258,15 @@ class FacebookHub(object):
 
         if self.app_secretproof:
             if access_token:
-                if 'access_token=' in _url:
-                    if 'appsecret_proof=' not in _url:
+                if 'access_token=' in url:
+                    if 'appsecret_proof=' not in url:
                         _appsecret_proof = self.generate__appsecret_proof(access_token=access_token)
-                        _url = _url + '&appsecret_proof=' + _appsecret_proof
+                        url += '&appsecret_proof=' + _appsecret_proof
+                elif get_data and 'access_token' in get_data:
+                        if 'appsecret_proof' not in get_data:
+                            _appsecret_proof = self.generate__appsecret_proof(access_token=access_token)
+                            if _appsecret_proof:
+                                get_data['appsecret_proof'] = _appsecret_proof
                 elif post_data and 'access_token' in post_data:
                         if 'appsecret_proof' not in post_data:
                             _appsecret_proof = self.generate__appsecret_proof(access_token=access_token)
@@ -247,9 +276,8 @@ class FacebookHub(object):
         try:
             if not post_data:
                 # normal get
-                response = requests.get(_url, params=get_data, verify=ssl_verify)
+                response = requests.get(url, params=get_data, verify=ssl_verify)
             else:
-                # todo - figure out how to specify access token here.  this probably breaks.
                 if post_data:
                     if 'batch' in post_data:
                         if isinstance(post_data['batch'], list):
@@ -674,6 +702,7 @@ class FacebookPyramid(FacebookHub):
         app_secretproof=None,
         app_domain=None,
         ssl_verify=None,
+        secure_only=None,
         app_scope=None,
         app_id=None
     ):
@@ -704,8 +733,10 @@ class FacebookPyramid(FacebookHub):
         if oauth_token_redirect_uri is None:
             oauth_token_redirect_uri = registry_settings.get('%s.oauth_token_redirect_uri' % fb_utils_prefix, None)
         if ssl_verify is None:
-            ssl_verify = registry_settings.get('%s.ssl_verify' % fb_utils_prefix, None)
-            
+            ssl_verify = registry_settings.get('%s.ssl_verify' % fb_utils_prefix, True)
+        if secure_only is None:
+            secure_only = registry_settings.get('%s.secure_only' % fb_utils_prefix, True)
+
         FacebookHub.__init__(self,
                              app_id=app_id,
                              app_secret=app_secret,
@@ -715,6 +746,7 @@ class FacebookPyramid(FacebookHub):
                              oauth_code_redirect_uri=oauth_code_redirect_uri,
                              oauth_token_redirect_uri=oauth_token_redirect_uri,
                              ssl_verify=ssl_verify,
+                             secure_only=secure_only,
                              fb_api_version=fb_api_version,
                              )
 
@@ -722,16 +754,28 @@ class FacebookPyramid(FacebookHub):
     def oauth_code__url_access_token(self, submitted_code=None, redirect_uri=None, scope=None):
         if submitted_code is None:
             submitted_code = self.request.params.get('code')
-        return FacebookHub.oauth_code__url_access_token(self, submitted_code=submitted_code, redirect_uri=redirect_uri, scope=scope)
+        return FacebookHub.oauth_code__url_access_token(self,
+                                                        submitted_code=submitted_code,
+                                                        redirect_uri=redirect_uri,
+                                                        scope=scope,
+                                                        )
 
     @require_authenticated_hub
     def oauth_code__get_access_token(self, submitted_code=None, redirect_uri=None, scope=None):
         if submitted_code is None:
             submitted_code = self.request.params.get('code')
-        return FacebookHub.oauth_code__get_access_token(self, submitted_code=submitted_code, redirect_uri=redirect_uri, scope=scope)
+        return FacebookHub.oauth_code__get_access_token(self,
+                                                        submitted_code=submitted_code,
+                                                        redirect_uri=redirect_uri,
+                                                        scope=scope,
+                                                        )
 
     @require_authenticated_hub
     def oauth_code__get_access_token_and_profile(self, submitted_code=None, redirect_uri=None, scope=None):
         if submitted_code is None:
             submitted_code = self.request.params.get('code')
-        return FacebookHub.oauth_code__get_access_token_and_profile(self, submitted_code=submitted_code, redirect_uri=redirect_uri, scope=scope)
+        return FacebookHub.oauth_code__get_access_token_and_profile(self,
+                                                                    submitted_code=submitted_code,
+                                                                    redirect_uri=redirect_uri,
+                                                                    scope=scope
+                                                                    )

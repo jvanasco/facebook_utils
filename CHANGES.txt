@@ -1,3 +1,11 @@
+0.50.1 (2017-03-31)
+------------------
+- added 'secure_only' constructor, default True, to ensure https requests
+- fixed how pyramid support used 'ssl_verify'
+- made url optional to api_proxy, defaulting to the graph url otherwise
+- appsecret_proof upgrades for get_data too
+
+
 0.50.0 (2017-03-29)
 ------------------
 - updates to work with recent facebook api changes

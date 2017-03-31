@@ -135,6 +135,66 @@ class TestFacebookUtils_Authenticated(unittest.TestCase):
         fb_data = hub.api_proxy(url="""https://graph.facebook.com""", expected_format='json.load', post_data=fb_post_data)
         self.assertTrue(fb_data)
 
+    def test_graph__no_url__get_batched(self):
+        hub = self._newHub()
+        FB_LIMIT_LINKS = 1
+        FB_LIMIT_HOME = 1
+        FB_FIELDS = 'id,from,message,comments,created_time,link,caption'
+        fb_post_data = {
+            'access_token': self.FBUTILS_ACCESS_TOKEN,
+            'batch': [
+                {"method": "GET", 'relative_url': "/me/permissions", },
+                {"method": "GET", 'relative_url': "/me/links", 'limit': FB_LIMIT_LINKS, 'fields': FB_FIELDS, },
+                {"method": "GET", 'relative_url': "/me/home", 'limit': FB_LIMIT_HOME, 'fields': FB_FIELDS, },
+            ],
+        }
+        fb_data = hub.api_proxy(expected_format='json.load', post_data=fb_post_data)
+        self.assertTrue(fb_data)
+
+    def test_graph__url__upgrades(self):
+        hub = self._newHub()
+        fb_data = hub.api_proxy(url="/me/permissions", access_token=self.FBUTILS_ACCESS_TOKEN)
+        # the payload is something like 
+        #    {u'data': [{u'permission': u'user_posts', u'status': u'granted'},
+        #               {u'permission': u'email', u'status': u'granted'},
+        #               {u'permission': u'publish_actions', u'status': u'granted'},
+        #               {u'permission': u'public_profile', u'status': u'granted'}
+        #               ]
+        #     }
+        self.assertIn('data', fb_data)
+        self.assertIn('permission', fb_data['data'][0])
+        
+        # make sure we tracked a _last_response
+        self.assertTrue(hub._last_response)
+        self.assertIsNone(hub.last_response_ratelimited())
+
+
+    def test_graph__no_url__get_object_single(self):
+        urls = {'https://example.com': '482839044422',
+                }
+        url = urls.keys()[0]
+        hub = self._newHub()
+        get_data = {'ids': url,
+                    }
+        fb_data = hub.api_proxy(expected_format='json.load', get_data=get_data)
+        self.assertIn(url, fb_data)
+        self.assertIn('og_object', fb_data[url])
+        self.assertIn('id', fb_data[url]['og_object'])
+        self.assertEquals(fb_data[url]['og_object']['id'], urls[url])
+        
+        # make sure we tracked a _last_response
+        self.assertTrue(hub._last_response)
+        self.assertIsNone(hub.last_response_ratelimited())
+
+    def test_graph__bad_url(self):
+        hub = self._newHub()
+        def _bad_url_insecure():
+            fb_data = hub.api_proxy(url="http://example.com")
+        def _bad_url_wtf():
+            fb_data = hub.api_proxy(url="wtf")
+        self.assertRaises(fb.ApiError, lambda: _bad_url_insecure())
+        self.assertRaises(fb.ApiError, lambda: _bad_url_wtf())
+
 
 class TestFacebookUtils_UnAuthenticated(unittest.TestCase):
 

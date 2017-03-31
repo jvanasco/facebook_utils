@@ -157,16 +157,18 @@ define some variables in your .ini files:
 
 file: development.ini
 
-    fbutils.app.id = 123
-    fbutils.app.secret = 123
-    fbutils.app.scope = email, user_birthday, user_checkins, offline_access
-    fbutils.app.oauth_code_redirect_uri = http://127.0.0.1:5010/facebook-oauth-redirect
+    # the default prefix is fbutils
+    fbutils.id = 123
+    fbutils.secret = 123
+    fbutils.scope = email, user_birthday, user_checkins, offline_access
+    fbutils.oauth_code_redirect_uri = http://127.0.0.1:5010/facebook-oauth-redirect
     fbutils.api_version = v2.8
     fbutils.oauth_code_redirect_uri=  http://127.0.0.1:5010/account/facebook-authenticate-oauth?response_type=code
     fbutils.oauth_token_redirect_uri= http://127.0.0.1:5010/account/facebook-authenticate-oauth-token?response_type=token
 
 or:
 
+    # customize the prefix!
     fbutils.prefix = facebook.app
     facebook.app.id = 123
     facebook.app.secret = 123
@@ -306,7 +308,9 @@ That will allow you to step through a few scenarios and set up an integration wi
 ToDo
 =======
 - I think in the future, the 'dicts' that come back should be cast into a 'response' object, and there will be some metadata attached to it.
-
+- Remove deprecated response parsing; everything seems to be JSON now
+- Use (and re-use) requests' "Session" objects 
+- The Pyramid setup could/should use a per-request reified object via `add_request_method`
 
 :copyright: 2012-2017 by Jonathan Vanasco
 license: BSD
