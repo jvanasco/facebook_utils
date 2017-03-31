@@ -28,10 +28,10 @@ All work is done via the `facebook_utils.FacebookHub()` object.
 
 Configure a hub with something like the following:
 
-	hub = FacebookHub(app_id = x,
-					  app_secret = y,
-					  app_secretproof = True
-					  )
+    hub = FacebookHub(app_id = x,
+                      app_secret = y,
+                      app_secretproof = True
+                      )
 
 Or make it unuthenticated. It's up to you.
 
@@ -53,7 +53,7 @@ is not explicitly provided.  It will be based on the `access_token` appearing as
 * an `access_token` in the POST payload
 
 This will allow you to follow paginated links from the API as-is, upgrading as needed
-	
+    
 
 IMPORTANT NOTES
 ===============
@@ -141,10 +141,14 @@ the header into a python dict:
 
 
 
-Notes
-=====
-Most methods will let you override the 'scope' and 'request_uri'.  This
-shouldn't really be necessary and will probably be deprecated.
+Some Notes
+==========
+
+Most methods will let you override the 'scope' and 'request_uri'.  This shouldn't really be necessary and will probably be deprecated.
+
+Some methods support multiple ways of parsing results.
+Until recently, Facebook's API returned values either as url-encoded strings or as JSON.
+Now most results are in JSON.
 
 
 Pyramid Examples
@@ -157,7 +161,25 @@ file: development.ini
     fbutils.app.secret = 123
     fbutils.app.scope = email, user_birthday, user_checkins, offline_access
     fbutils.app.oauth_code_redirect_uri = http://127.0.0.1:5010/facebook-oauth-redirect
-	fbutils.api_version = v2.8
+    fbutils.api_version = v2.8
+    fbutils.oauth_code_redirect_uri=  http://127.0.0.1:5010/account/facebook-authenticate-oauth?response_type=code
+    fbutils.oauth_token_redirect_uri= http://127.0.0.1:5010/account/facebook-authenticate-oauth-token?response_type=token
+
+or:
+
+    fbutils.prefix = facebook.app
+    facebook.app.id = 123
+    facebook.app.secret = 123
+    facebook.app.secretproof = True
+    facebook.app.scope = email, user_birthday, user_checkins, offline_access
+    facebook.app.oauth_code_redirect_uri = http://127.0.0.1:5010/facebook-oauth-redirect
+    facebook.app.api_version = v2.8
+    facebook.app.oauth_code_redirect_uri=  http://127.0.0.1:5010/account/facebook-authenticate-oauth?response_type=code
+    facebook.app.oauth_token_redirect_uri= http://127.0.0.1:5010/account/facebook-authenticate-oauth-token?response_type=token
+    
+    
+    
+Make sure your endpoints are whitelisted on the Facebook console
 
 integrate into your handlers:
 
@@ -165,22 +187,26 @@ integrate into your handlers:
 
     class WebAccount(base.Handler):
         def __new_fb_object(self):
-            "Create a new Facebook Object"
-            # note that we can override settings in the .ini files
-            oauth_code_redirect_uri= "http://%(app_domain)s/account/facebook-authenticate-oauth?response_type=code" % {'app_domain': self.request.registry.settings['app_domain']}
-            oauth_token_redirect_uri= "http://%(app_domain)s/account/facebook-authenticate-oauth-token?response_type=token" % {'app_domain': self.request.registry.settings['app_domain']}
-            fb= FacebookPyramid(self.request, oauth_code_redirect_uri=oauth_code_redirect_uri)
+            "Create a new Facebook Object
+             note that we can override settings in the .ini files if we want
+            "
+            fb = FacebookPyramid(self.request,
+                                 oauth_code_redirect_uri = self.request.registry.settings['facebook.app.oauth_code_redirect_uri'],
+                                 oauth_token_redirect_uri = self.request.registry.settings['facebook.app.oauth_token_redirect_uri'],
+                                 )
             return fb
 
         def sign_up(self):
             "sign up page, which contains a "signup with facebook link"
-            fb= self.__new_fb_object()
+            fb = self.__new_fb_object()
             return {"project":"MyApp", 'facebook_pyramid':facebook}
 
         @action(renderer="web/account/facebook_authenticate_oauth.html")
         def facebook_authenticate_oauth(self):
-            fb= self.__new_fb_object()
-            (access_token, profile)= fb.oauth_code__get_access_token_and_profile(self.request)
+            fb = self.__new_fb_object()
+            (access_token,
+             profile
+             )= fb.oauth_code__get_access_token_and_profile(self.request)
             if profile:
                 # congrats, they logged in
                 # register the user to your db
@@ -192,9 +218,10 @@ integrate into your handlers:
 
 
 integrate into your template:
-            <a class="fancy_button-1" id="signup-start_btn-facebook" href="${facebook_pyramid.oauth_code__url_dialog()}">
-                Connect with <strong>Facebook</strong>
-            </a>
+
+    <a class="fancy_button-1" id="signup-start_btn-facebook" href="${facebook_pyramid.oauth_code__url_dialog()}">
+        Connect with <strong>Facebook</strong>
+    </a>
 
 Graph Operations
 ================
@@ -241,17 +268,20 @@ the `api_proxy` will catch *most* errors.  since this is in development,
 i'm raising uncaught exceptions.  There will be a future "ApiUnhandledError"
 
 
-Unit Tests
+Testing
 ===========
+
+Unit Tests
+----------
 
 Unit Tests require the following environment vars to be set:
 
-	FBUTILS_APP_ID
-	FBUTILS_APP_SECRET
-	FBUTILS_APP_SCOPE
-	FBUTILS_ACCESS_TOKEN
-	FBUTILS_APP_DOMAIN
-	FBUTILS_APP_SECRETPROOF
+    FBUTILS_APP_ID
+    FBUTILS_APP_SECRET
+    FBUTILS_APP_SCOPE
+    FBUTILS_ACCESS_TOKEN
+    FBUTILS_APP_DOMAIN
+    FBUTILS_APP_SECRETPROOF
 
 it should be simple...
 
@@ -259,14 +289,18 @@ it should be simple...
     export FBUTILS_APP_SECRET="app_secret_from_facebook.com"
     export FBUTILS_APP_SCOPE="email,user_activities,user_status,read_stream"
 
-	export FBUTILS_APP_DOMAIN='whitelisted domain'
+    export FBUTILS_APP_DOMAIN='whitelisted domain'
     export FBUTILS_ACCESS_TOKEN="from_API_operations, or generate via developer interface"
-	export FBUTILS_APP_SECRETPROOF=set if you locked this down on facebook
-	
+    export FBUTILS_APP_SECRETPROOF=set if you locked this down on facebook
+    
+Integrated Tests
+----------------
+
 There is also a `test_interactive.py` file that uses the same environment vars
 
     python test_interactive.py
 
+That will allow you to step through a few scenarios and set up an integration with facebook itself.
 
 
 ToDo
