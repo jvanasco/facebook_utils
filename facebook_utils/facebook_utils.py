@@ -5,6 +5,7 @@ import cgi
 import hashlib
 import hmac
 import os
+import re
 import requests
 import time
 import urllib
@@ -14,6 +15,9 @@ try:
     import simplejson as json
 except ImportError:
     import json
+
+re_api_version_fixable = re.compile('\d\.\d+')
+re_api_version_valid = re.compile('v\d\.\d+')
 
 import logging
 log = logging.getLogger(__name__)
@@ -62,6 +66,7 @@ class FacebookHub(object):
     app_secretproof = None
     app_scope = None
     app_domain = None
+    fb_api_version = None
     oauth_code_redirect_uri = None
     oauth_token_redirect_uri = None
     debug_error = False
@@ -108,17 +113,25 @@ class FacebookHub(object):
             if app_id is None or app_secret is None:
                 raise ValueError("Must initialize FacebookHub() with an app_id and an app_secret")
 
-        fb_api_version = fb_api_version or FB_API_VERSION
-        if fb_api_version is None:
+        # this seems assbackwards, but we want to store a numeric version of the facebook api version
+        _fb_api_version = fb_api_version or FB_API_VERSION
+        if _fb_api_version:
+            if re_api_version_valid.match(_fb_api_version):
+                # ignore the initial v
+                _fb_api_version = _fb_api_version[1:]
+            else:
+                if not re_api_version_fixable.match(_fb_api_version):
+                    raise ValueError("Invalid API version")
+        self.fb_api_version = float(_fb_api_version) if _fb_api_version else None
+
+        if _fb_api_version is None:
             self.fb_url_graph_api = FB_URL_GRAPH_API
-            self.fb_url_web = FB_URL_WEB
         else:
-            self.fb_url_graph_api = u'{fb_url_graph_api}/{version}'.format(fb_url_graph_api=FB_URL_GRAPH_API,
-                                                                           version=fb_api_version,
-                                                                           )
-            self.fb_url_web = u'{fb_url_web}/{version}'.format(fb_url_web=FB_URL_WEB,
-                                                               version=fb_api_version,
-                                                               )
+            # insert the v here
+            self.fb_url_graph_api = u'{fb_url_graph_api}/v{version}'.format(fb_url_graph_api=FB_URL_GRAPH_API,
+                                                                            version=self.fb_api_version,
+                                                                            )
+        self.fb_url_web = FB_URL_WEB
         self.mask_unhandled_exceptions = mask_unhandled_exceptions
         self.oauth_token_redirect_uri = oauth_token_redirect_uri
         self.oauth_code_redirect_uri = oauth_code_redirect_uri
