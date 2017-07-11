@@ -416,7 +416,7 @@ class FacebookHub(object):
             raise
 
     @require_authenticated_hub
-    def oauth_code__get_access_token_and_profile(self, submitted_code=None, redirect_uri=None, scope=None):
+    def oauth_code__get_access_token_and_profile(self, submitted_code=None, redirect_uri=None, scope=None, fields=None):
         """
         Gets the access token AND a profile from Facebook that corresponds with a code.
         This method wraps a call to `oauth_code__get_access_token`, then wraps `graph__get_profile_for_access_token` which opens a json object at the url returned by `graph__url_me_for_access_token`.
@@ -431,7 +431,7 @@ class FacebookHub(object):
                                                              redirect_uri=redirect_uri,
                                                              scope=scope,
                                                              )
-            profile = self.graph__get_profile_for_access_token(access_token=access_token)
+            profile = self.graph__get_profile_for_access_token(access_token=access_token, fields=fields, )
         except:
             raise
         return (access_token, profile)
@@ -505,41 +505,34 @@ class FacebookHub(object):
         raise ValueError('Deprecated; call graph__url_me_for_access_token instead')
 
     @require_authenticated_hub
-    def graph__url_me_for_access_token(self, access_token=None):
+    def graph__url_me_for_access_token(self, access_token=None, fields=None):
         if access_token is None:
             raise ValueError('must submit access_token')
 
         return FacebookApiUrls.graph__url_me_for_access_token(
             fb_url_graph_api=self.fb_url_graph_api,
             access_token=access_token,
+            fields=fields,
             app_secretproof=self.generate__appsecret_proof(access_token),
         )
 
     @require_authenticated_hub
-    def graph__url_user_for_access_token(self, access_token=None, user=None, action=None):
+    def graph__url_user_for_access_token(self, access_token=None, user=None, action=None, fields=None):
         if access_token is None:
             raise ValueError('must submit access_token')
         if user is None:
             raise ValueError('must submit user')
-        if action:
-            return FacebookApiUrls.graph__url_user_for_access_token(
-                fb_url_graph_api=self.fb_url_graph_api,
-                access_token=access_token,
-                user=user,
-                action=action,
-                app_secretproof=self.generate__appsecret_proof(access_token),
-            )
-
         return FacebookApiUrls.graph__url_user_for_access_token(
             fb_url_graph_api=self.fb_url_graph_api,
             access_token=access_token,
             user=user,
-            action=None,
+            action=action,
+            fields=fields,
             app_secretproof=self.generate__appsecret_proof(access_token),
         )
 
     @require_authenticated_hub
-    def graph__get_profile_for_access_token(self, access_token=None, user=None, action=None):
+    def graph__get_profile_for_access_token(self, access_token=None, user=None, action=None, fields=None):
         """
         Grabs a profile for a user, corresponding to a profile, from Facebook.
         This uses `requests` to open the url, so should be considered as blocking code.
@@ -553,13 +546,15 @@ class FacebookHub(object):
                 if action:
                     url = self.graph__url_user_for_access_token(access_token,
                                                                 action=action,
+                                                                fields=fields,
                                                                 )
                 else:
-                    url = self.graph__url_me_for_access_token(access_token)
+                    url = self.graph__url_me_for_access_token(access_token, fields=fields)
             else:
                 url = self.graph__url_user_for_access_token(access_token,
                                                             user=user,
-                                                            action=action
+                                                            action=action,
+                                                            fields=fields,
                                                             )
             profile = self.api_proxy(url, expected_format='json.load')
         except:
@@ -784,11 +779,12 @@ class FacebookPyramid(FacebookHub):
                                                         )
 
     @require_authenticated_hub
-    def oauth_code__get_access_token_and_profile(self, submitted_code=None, redirect_uri=None, scope=None):
+    def oauth_code__get_access_token_and_profile(self, submitted_code=None, redirect_uri=None, scope=None, fields=None):
         if submitted_code is None:
             submitted_code = self.request.params.get('code')
         return FacebookHub.oauth_code__get_access_token_and_profile(self,
                                                                     submitted_code=submitted_code,
                                                                     redirect_uri=redirect_uri,
-                                                                    scope=scope
+                                                                    scope=scope,
+                                                                    fields=fields,
                                                                     )

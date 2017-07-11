@@ -15,9 +15,9 @@ URL_OAUTH_DIALOG_CODE = u'{fb_url_web}/dialog/oauth?client_id={app_id}&scope={sc
 URL_OAUTH_DIALOG_TOKEN = u'{fb_url_web}/dialog/oauth?client_id={app_id}&scope={scope}&redirect_uri={redirect_uri}&response_type=token'
 URL_OAUTH_ACCESSTOKEN_CODE = u'{fb_url_graph_api}/oauth/access_token?client_id={app_id}&redirect_uri={redirect_uri}&client_secret={app_secret}&code={code}'
 URL_OAUTH_ACCESSTOKEN_EXTEND = u'{fb_url_graph_api}/oauth/access_token?grant_type=fb_exchange_token&client_id={app_id}&client_secret={app_secret}&fb_exchange_token={access_token}'
-URL_GRAPH_ME_ACCESS_TOKEN = u'{fb_url_graph_api}/me?{access_token}'
-URL_GRAPH_USER_ACCESS_TOKEN = u'{fb_url_graph_api}/{user}?{access_token}'
-URL_GRAPH_USER_ACTION_ACCESS_TOKEN = u'{fb_url_graph_api}/{user}/{action}?{access_token}'
+URL_GRAPH_ME_ACCESS_TOKEN = u'{fb_url_graph_api}/me?{qs}'  # qs is likely {access_token}&{fields}
+URL_GRAPH_USER_ACCESS_TOKEN = u'{fb_url_graph_api}/{user}?{qs}'  # qs is likely {access_token}&{fields}
+URL_GRAPH_USER_ACTION_ACCESS_TOKEN = u'{fb_url_graph_api}/{user}/{action}?{qs}'   # qs is likely {access_token}&{fields}
 URL_GRAPH_ACTION_LIST_ACCESS_TOKEN = u'{fb_url_graph_api}/me/{fb_app_namespace}:{fb_action_type_name}?access_token={access_token}'
 URL_GRAPH_ACTION_CREATE = u'{fb_url_graph_api}/me/{fb_fb_app_namespace}:{fb_action_type_name}'
 URL_GRAPH_ACTION_DELETE = u'{fb_url_graph_api}/{action_id}'
@@ -84,9 +84,13 @@ class FacebookApiUrls(object):
         return url
 
     @classmethod
-    def graph__url_me_for_access_token(cls, fb_url_graph_api, access_token, app_secretproof=None):
+    def graph__url_me_for_access_token(cls, fb_url_graph_api, access_token, app_secretproof=None, fields=None):
+        qs = {'access_token': access_token, }
+        if fields is not None:
+            qs['fields'] = fields
+        qs = urllib.urlencode(qs)
         url = URL_GRAPH_ME_ACCESS_TOKEN.format(fb_url_graph_api=fb_url_graph_api,
-                                               access_token=urllib.urlencode(dict(access_token=access_token)),
+                                               qs=qs,
                                                )
         return extend__appsecret_proof(url, app_secretproof)
 
@@ -100,17 +104,21 @@ class FacebookApiUrls(object):
         return extend__appsecret_proof(url, app_secretproof)
 
     @classmethod
-    def graph__url_user_for_access_token(cls, fb_url_graph_api, access_token, user, action=None, app_secretproof=None):
+    def graph__url_user_for_access_token(cls, fb_url_graph_api, access_token, user, action=None, app_secretproof=None, fields=None):
+        qs = {'access_token': access_token, }
+        if fields is not None:
+            qs['fields'] = fields
+        qs = urllib.urlencode(qs)
         if action is None:
             url = URL_GRAPH_USER_ACCESS_TOKEN.format(fb_url_graph_api=fb_url_graph_api,
                                                      user=user,
-                                                     access_token=urllib.urlencode(dict(access_token=access_token)),
+                                                     qs=qs,
                                                      )
         else:
             url = URL_GRAPH_USER_ACTION_ACCESS_TOKEN.format(fb_url_graph_api=fb_url_graph_api,
                                                             user=user,
                                                             action=action,
-                                                            access_token=urllib.urlencode(dict(access_token=access_token)),
+                                                            qs=qs,
                                                             )
         return extend__appsecret_proof(url, app_secretproof)
 

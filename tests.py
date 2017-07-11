@@ -13,6 +13,7 @@ import facebook_utils as fb
 class TestFacebookUtils_Authenticated_Core(object):
     FBUTILS_ACCESS_TOKEN = None
     fb_api_version = None
+    expect_email_in_profile = False
 
     def _newHub(self):
         """
@@ -132,6 +133,17 @@ class TestFacebookUtils_Authenticated_Core(object):
         hub = self._newHub()
         fb_data = hub.graph__get_profile_for_access_token(access_token=self.FBUTILS_ACCESS_TOKEN)
         self.assertTrue(fb_data)
+        if self.expect_email_in_profile:
+            self.assertIn('email', fb_data)
+            self.assertIn('id', fb_data)
+            self.assertIn('name', fb_data)
+        else:
+            self.assertNotIn('email', fb_data)
+            fb_data2 = hub.graph__get_profile_for_access_token(access_token=self.FBUTILS_ACCESS_TOKEN, fields='email,name')
+            self.assertTrue(fb_data2)
+            self.assertIn('email', fb_data2)
+            self.assertIn('id', fb_data2)
+            self.assertIn('name', fb_data2)
 
     def test_graph__get_batched(self):
         hub = self._newHub()
@@ -263,6 +275,11 @@ class TestFacebookUtils_UnAuthenticated(object):
 class TestFacebookUtils_Authenticated_NoVersion(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
     fb_api_version = None
 
+
+class TestFacebookUtils_Authenticated_23(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
+    fb_api_version = '2.3'
+    expect_email_in_profile = True
+
 class TestFacebookUtils_Authenticated_24(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
     fb_api_version = '2.4'
 
@@ -304,5 +321,8 @@ class TestFacebookUtils_UnAuthenticated_28(TestFacebookUtils_UnAuthenticated, un
 
 class TestFacebookUtils_UnAuthenticated_29(TestFacebookUtils_UnAuthenticated, unittest.TestCase):
     fb_api_version = '2.9'
+
+
+# ==============================================================================
 
 

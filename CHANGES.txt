@@ -3,6 +3,14 @@
 - storing the api version internally
 - doing some regex checking to ensure a valid api version is sent to the constructor
 - reorganized tests to run against multiple API endpoint versions
+- adding `fields` argument to:
+	* graph__url_me_for_access_token (passthrough to `graph__get_profile_for_access_token`)
+	* graph__url_user_for_access_token (passthrough to `graph__get_profile_for_access_token`)
+	* oauth_code__get_access_token_and_profile (passthrough to `graph__get_profile_for_access_token`)
+	* graph__get_profile_for_access_token
+- restructured some url templates to use a `qs` querystring instead of attribute names
+
+The reason for the above changes: the `v2.3` deprecation changed some Facebook API behaviors in undocumented ways. Most notably, `email` is not automatically returned with a profile. It must be queried specifically.
 
 0.50.1 (2017-03-31)
 ------------------
