@@ -189,6 +189,7 @@ class TestFacebookUtils_Authenticated_Core(object):
         #     }
         self.assertIn('data', fb_data)
         self.assertIn('permission', fb_data['data'][0])
+        pprint.pprint(fb_data)
         
         # make sure we tracked a _last_response
         self.assertTrue(hub._last_response)
@@ -222,6 +223,39 @@ class TestFacebookUtils_Authenticated_Core(object):
         self.assertRaises(fb.ApiError, lambda: _bad_url_insecure())
         self.assertRaises(fb.ApiError, lambda: _bad_url_wtf())
 
+
+    def test_permissions_access(self):
+        def _validate_payload(_payload):
+            self.assertIn('data', _payload)
+            _has_email = None
+            for datum in _payload['data']:
+                if datum['permission'] == 'email':
+                    _has_email = True if datum['status'] == 'granted' else False
+            self.assertTrue(_has_email)
+        
+        
+        # SETUP start
+        hub = self._newHub()
+        fb_data = hub.graph__get_profile_for_access_token(access_token=self.FBUTILS_ACCESS_TOKEN)
+        self.assertTrue(fb_data)
+        user_id = fb_data['id']
+        # SETUP end
+
+        # this is one method of getting permissions        
+        url = "/%s/permissions" % user_id
+        fb_data__permissions = hub.api_proxy(url, access_token=self.FBUTILS_ACCESS_TOKEN)
+        _validate_payload(fb_data__permissions)
+
+        # this is another method...        
+        fb_data__permissions_alt = hub.graph__get_profile_for_access_token(
+            access_token = self.FBUTILS_ACCESS_TOKEN,
+            user = user_id,
+            action = 'permissions',
+            # fields = 'id,name,email',  # don't pass the profile elements in to the action. otherwise it blanks
+        )
+        _validate_payload(fb_data__permissions)
+
+        
 
 class TestFacebookUtils_UnAuthenticated(object):
     fb_api_version = None
@@ -274,7 +308,6 @@ class TestFacebookUtils_UnAuthenticated(object):
 
 class TestFacebookUtils_Authenticated_NoVersion(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
     fb_api_version = None
-
 
 class TestFacebookUtils_Authenticated_23(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
     fb_api_version = '2.3'
