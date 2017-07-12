@@ -145,37 +145,49 @@ class TestFacebookUtils_Authenticated_Core(object):
             self.assertIn('id', fb_data2)
             self.assertIn('name', fb_data2)
 
+    def test_graph__get_feed_single(self):
+        hub = self._newHub()
+        FB_LIMIT_LINKS = 10
+        FB_FIELDS = 'id,from,message,comments,created_time,link,caption,description'
+        fb_data = hub.api_proxy(url="""https://graph.facebook.com/me/feed?fields=%s""" % FB_FIELDS,
+                                expected_format='json.load',
+                                access_token=self.FBUTILS_ACCESS_TOKEN,
+                                )
+        self.assertTrue(fb_data)
+        # TODO - test to see we have these fields!
+
     def test_graph__get_batched(self):
         hub = self._newHub()
         FB_LIMIT_LINKS = 1
         FB_LIMIT_HOME = 1
-        FB_FIELDS = 'id,from,message,comments,created_time,link,caption'
+        FB_FIELDS = 'id,from,message,comments,created_time,link,caption,description'
         fb_post_data = {
             'access_token': self.FBUTILS_ACCESS_TOKEN,
             'batch': [
                 {"method": "GET", 'relative_url': "/me/permissions", },
-                {"method": "GET", 'relative_url': "/me/links", 'limit': FB_LIMIT_LINKS, 'fields': FB_FIELDS, },
-                {"method": "GET", 'relative_url': "/me/home", 'limit': FB_LIMIT_HOME, 'fields': FB_FIELDS, },
+                {"method": "GET", 'relative_url': "/me/feed?limit=%s&fields=%s" % (FB_LIMIT_LINKS, FB_FIELDS), },
             ],
         }
         fb_data = hub.api_proxy(url="""https://graph.facebook.com""", expected_format='json.load', post_data=fb_post_data)
         self.assertTrue(fb_data)
+        # TODO - test to see we have the fields present
 
     def test_graph__no_url__get_batched(self):
         hub = self._newHub()
         FB_LIMIT_LINKS = 1
         FB_LIMIT_HOME = 1
-        FB_FIELDS = 'id,from,message,comments,created_time,link,caption'
+        # FB_FIELDS = 'id,from,message,comments,created_time,link,caption'
+        FB_FIELDS = sorted(list(set('id,name,description,message,created_time,caption,description'.split(','))))
         fb_post_data = {
             'access_token': self.FBUTILS_ACCESS_TOKEN,
             'batch': [
                 {"method": "GET", 'relative_url': "/me/permissions", },
-                {"method": "GET", 'relative_url': "/me/links", 'limit': FB_LIMIT_LINKS, 'fields': FB_FIELDS, },
-                {"method": "GET", 'relative_url': "/me/home", 'limit': FB_LIMIT_HOME, 'fields': FB_FIELDS, },
+                {"method": "GET", 'relative_url': "/me/feed?limit=%s&fields=%s" % (FB_LIMIT_LINKS, FB_FIELDS), },
             ],
         }
         fb_data = hub.api_proxy(expected_format='json.load', post_data=fb_post_data)
         self.assertTrue(fb_data)
+        # TODO - test to see we have the batch fields present
 
     def test_graph__url__upgrades(self):
         hub = self._newHub()
@@ -189,7 +201,6 @@ class TestFacebookUtils_Authenticated_Core(object):
         #     }
         self.assertIn('data', fb_data)
         self.assertIn('permission', fb_data['data'][0])
-        pprint.pprint(fb_data)
         
         # make sure we tracked a _last_response
         self.assertTrue(hub._last_response)
@@ -255,6 +266,9 @@ class TestFacebookUtils_Authenticated_Core(object):
         )
         _validate_payload(fb_data__permissions)
 
+
+    def test_feed_elements(self):
+        pass
         
 
 class TestFacebookUtils_UnAuthenticated(object):

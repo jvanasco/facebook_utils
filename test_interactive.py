@@ -106,13 +106,14 @@ print("*" * 40)
 print("now let's grab a batch.")
 FB_LIMIT_LINKS = 1
 FB_LIMIT_HOME = 1
-FB_FIELDS = 'id,from,message,comments,created_time,link,caption'
+FB_FIELDS = 'id,from,message,comments,created_time,link,caption,description'
 
 url_multi = """https://graph.facebook.com"""
 fb_post_data = {'access_token': access_token,
                 'batch': [{"method": "GET", 'relative_url': "/me/permissions", },
-                          {"method": "GET", 'relative_url': "/me/links", 'limit': FB_LIMIT_LINKS, 'fields': FB_FIELDS, },
-                          {"method": "GET", 'relative_url': "/me/home", 'limit': FB_LIMIT_HOME, 'fields': FB_FIELDS, },
+                          {"method": "GET", 'relative_url': "/me/feed", 'limit': FB_LIMIT_LINKS, 'fields': FB_FIELDS, },
+                          # {"method": "GET", 'relative_url': "/me/links", 'limit': FB_LIMIT_LINKS, 'fields': FB_FIELDS, },
+                          # {"method": "GET", 'relative_url': "/me/home", 'limit': FB_LIMIT_HOME, 'fields': FB_FIELDS, },
                           ],
                 }
 fb_data = hub.api_proxy(url=url_multi, expected_format='json.load', post_data=fb_post_data, )
