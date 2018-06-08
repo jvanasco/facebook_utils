@@ -366,6 +366,8 @@ class FacebookHub(object):
                             if ('message' in error) and error['message']:
                                 if error['message'][:63] == 'Error validating access token: Session has expired at unix time':
                                     raise ApiAuthExpiredError(**error)
+                                elif "The access token is invalid since the user hasn't engaged the app in longer than 90 days." in error['message']:
+                                    raise ApiAuthExpiredError(**error)
                                 elif error['message'][:26] == 'Invalid OAuth access token':
                                     raise ApiAuthError(**error)
                                 elif error['message'][:29] == 'Error validating access token':
