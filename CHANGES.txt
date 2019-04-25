@@ -1,3 +1,13 @@
+0.50.4 (2019-04-25)
+------------------
+- now testing facebook api versions 2.7 - 3.2
+- renamed `last_response_ratelimited` to `last_response_usage`; now checking two fields
+- marked `last_response_ratelimited` for deprecation
+- added `last_response_is_ratelimited`
+- tested/works under python3
+- added todo
+
+
 0.50.3 (2018-08-08)
 ------------------
 - catching another form of expired auth access

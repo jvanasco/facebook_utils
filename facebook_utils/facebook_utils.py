@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
 from functools import wraps
 import base64
 import cgi
@@ -8,8 +9,13 @@ import os
 import re
 import requests
 import time
-import urllib
-import urlparse
+import warnings
+
+import six
+from six.moves.urllib.parse import urlencode
+from six.moves.urllib.parse import urlparse
+from six.moves.urllib.parse import parse_qs
+from six import text_type
 
 try:
     import simplejson as json
@@ -22,25 +28,30 @@ re_api_version_valid = re.compile('v\d\.\d+')
 import logging
 log = logging.getLogger(__name__)
 
+
+def warn_future(message):
+    warnings.warn(message, FutureWarning, stacklevel=2)
+
+
 # ==============================================================================
 
-from facebook_api_urls import (FacebookApiUrls,
-                               FB_URL_GRAPH_API,
-                               FB_URL_WEB,
-                               )
-from facebook_exceptions import reformat_error
-from facebook_exceptions import (ApiError,
-                                 ApiAuthError,
-                                 ApiAuthExpiredError,
-                                 ApiApplicationError,
-                                 ApiResponseError,
-                                 ApiRuntimeVerirficationFormatError,
-                                 ApiRuntimeGrantError,
-                                 ApiRuntimeScopeError,
-                                 ApiRuntimeGraphMethodError,
-                                 ApiUnhandledError,
-                                 AuthenticatedHubRequired,
-                                 )
+from .facebook_api_urls import (FacebookApiUrls,
+                                FB_URL_GRAPH_API,
+                                FB_URL_WEB,
+                                )
+from .facebook_exceptions import reformat_error
+from .facebook_exceptions import (ApiError,
+                                  ApiAuthError,
+                                  ApiAuthExpiredError,
+                                  ApiApplicationError,
+                                  ApiResponseError,
+                                  ApiRuntimeVerirficationFormatError,
+                                  ApiRuntimeGrantError,
+                                  ApiRuntimeScopeError,
+                                  ApiRuntimeGraphMethodError,
+                                  ApiUnhandledError,
+                                  AuthenticatedHubRequired,
+                                  )
 
 # ==============================================================================
 
@@ -128,9 +139,10 @@ class FacebookHub(object):
             self.fb_url_graph_api = FB_URL_GRAPH_API
         else:
             # insert the v here
-            self.fb_url_graph_api = u'{fb_url_graph_api}/v{version}'.format(fb_url_graph_api=FB_URL_GRAPH_API,
-                                                                            version=self.fb_api_version,
-                                                                            )
+            self.fb_url_graph_api = text_type('{fb_url_graph_api}/v{version}')\
+                .format(fb_url_graph_api=FB_URL_GRAPH_API,
+                        version=self.fb_api_version,
+                        )
         self.fb_url_web = FB_URL_WEB
         self.mask_unhandled_exceptions = mask_unhandled_exceptions
         self.oauth_token_redirect_uri = oauth_token_redirect_uri
@@ -187,11 +199,34 @@ class FacebookHub(object):
                                                             submitted_code=submitted_code,
                                                             )
 
-    def last_response_ratelimited(self):
+    def last_response_usage(self):
+        """
+        This checks headers for `x-page-usage` or `x-app-suage`
+
+            'x-app-usage': '{"call_count":0,"total_cputime":0,"total_time":0}'
+        """
         if self._last_response:
             if self._last_response.headers:
                 if 'X-Page-Usage' in self._last_response.headers:
                     return json.loads(self._last_response.headers['X-Page-Usage'])
+                if 'x-app-usage' in self._last_response.headers:
+                    return json.loads(self._last_response.headers['x-app-usage'])
+        return None
+
+    def last_response_ratelimited(self):
+        warn_future("""Deprecated `last_response_ratelimited`; call `last_response_usage` instead""")
+        return self.last_response_usage()
+
+    @property
+    def last_response_is_ratelimited(self):
+        """
+        checks for ratelimited response header
+        """
+        if self._last_response:
+            if self._last_response.headers:
+                if 'WWW-Authenticate' in self._last_response.headers:
+                    if (self._last_response.raw.headers['WWW-Authenticate'] == 'OAuth "Facebook Platform" "invalid_request" "(#4) Application request'):
+                        return True
         return None
 
     def generate__appsecret_proof(self, access_token=None):
@@ -202,8 +237,9 @@ class FacebookHub(object):
             return None
         if access_token is None:
             return None
-        h = hmac.new(self.app_secret,
-                     msg=access_token,
+        # PY3 requires bytes so `encode()`; this is PY2 compatible
+        h = hmac.new(self.app_secret.encode(),
+                     msg=access_token.encode(),
                      digestmod=hashlib.sha256
                      )
         return h.hexdigest()
@@ -227,12 +263,13 @@ class FacebookHub(object):
         response_content = None
         if ssl_verify is None:
             ssl_verify = self.ssl_verify
-            
+
         # stash the original url
         _url_original = url
 
         # quickly
         if not url:
+            url = "%s/" % self.fb_url_graph_api
             url = self.fb_url_graph_api
         else:
             _url_compare = url.lower()
@@ -251,7 +288,7 @@ class FacebookHub(object):
         if access_token:
             if not get_data or not get_data.get('access_token'):
                 if 'access_token=' not in url:
-                    _access_token = urllib.urlencode(dict(access_token=access_token))
+                    _access_token = urlencode(dict(access_token=access_token))
                     if '?' not in url:
                         url += '?' + _access_token
                     else:
@@ -263,9 +300,9 @@ class FacebookHub(object):
             elif get_data and 'access_token' in get_data:
                 access_token = get_data['access_token']
             elif 'access_token=' in url:
-                _parsed = urlparse.urlparse(url)
+                _parsed = urlparse(url)
                 if _parsed.query:
-                    _qs = urlparse.parse_qs(_parsed.query)
+                    _qs = parse_qs(_parsed.query)
                     access_token = _qs.get('access_token')  # this will be `None` or a list
                     access_token = access_token[0] if access_token else None
 
@@ -300,7 +337,7 @@ class FacebookHub(object):
                 else:
                     response = requests.post(url, data=post_data, verify=ssl_verify)
 
-            # store the response for possible later debugging by user
+            # store the response for possible later debugging by user
             # e.g. `response.headers['X-FB-Debug']`
             self._last_response = response
 
@@ -326,13 +363,13 @@ class FacebookHub(object):
                 elif expected_format == 'cgi.parse_qs':
                     response_content = cgi.parse_qs(response_content)
                 elif expected_format == 'urlparse.parse_qs':
-                    response_content = urlparse.parse_qs(response_content)
+                    response_content = parse_qs(response_content)
                 else:
                     raise ValueError("Unexpected Format: %s" % expected_format)
             else:
                 if DEBUG:
-                    print response
-                    print response.__dict__
+                    print(response)
+                    print(response.__dict__)
                 if response.status_code == 400:
                     rval = ''
                     try:
@@ -675,7 +712,7 @@ class FacebookHub(object):
         def base64_url_decode(inp):
             padding_factor = (4 - len(inp) % 4) % 4
             inp += "=" * padding_factor
-            return base64.b64decode(unicode(inp).translate(dict(zip(map(ord, u'-_'), u'+/'))))
+            return base64.b64decode(text_type(inp).translate(dict(list(zip(list(map(ord, text_type('-_')), text_type('+/')))))))
 
         (signature, payload) = signed_request.split('.')
 
@@ -721,7 +758,7 @@ class FacebookPyramid(FacebookHub):
         """
         self.request = request
         registry_settings = request.registry.settings
-        
+
         fb_utils_prefix = registry_settings.get('fbutils.prefix', 'fbutils')
 
         fb_api_version = fb_api_version or FB_API_VERSION

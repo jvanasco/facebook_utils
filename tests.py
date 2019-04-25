@@ -2,7 +2,10 @@ import unittest
 import os
 import pdb
 import pprint
-import urllib
+try:
+    from urllib import quote_plus
+except:
+    from urllib.parse import quote_plus
 
 import facebook_utils as fb
 
@@ -17,12 +20,13 @@ class TestFacebookUtils_Authenticated_Core(object):
 
     def _newHub(self):
         """
-        we need the following env variables set:
+        Ee need the following env variables set:
             FBUTILS_APP_ID
             FBUTILS_APP_SECRET
             FBUTILS_APP_SCOPE
             FBUTILS_APP_DOMAIN
             FBUTILS_ACCESS_TOKEN*
+
         This might need to be set:
             FBUTILS_APP_SECRETPROOF
             
@@ -69,19 +73,19 @@ class TestFacebookUtils_Authenticated_Core(object):
         self.assertEqual(url,
                          '%(FB_API_BASE_DIALOG)s/oauth?client_id=%(FBUTILS_APP_ID)s&scope=email&redirect_uri=https%%3A%%2F%%2F%(FBUTILS_APP_DOMAIN)s%%2Foauth-code' % 
                             {'FBUTILS_APP_ID': hub.app_id,
-                             'FBUTILS_APP_DOMAIN': urllib.quote_plus(self.FBUTILS_APP_DOMAIN),
+                             'FBUTILS_APP_DOMAIN': quote_plus(self.FBUTILS_APP_DOMAIN),
                              'FB_API_BASE_DIALOG': fb_api_base_dialog,
                             }
                          )
 
     def test_oauth_code__url_dialog__custom_redirect(self):
         hub = self._newHub()
-        url = hub.oauth_code__url_dialog(redirect_uri='https://%(FBUTILS_APP_DOMAIN)s/oauth-code-custom' % {'FBUTILS_APP_DOMAIN': urllib.quote_plus(self.FBUTILS_APP_DOMAIN)})
+        url = hub.oauth_code__url_dialog(redirect_uri='https://%(FBUTILS_APP_DOMAIN)s/oauth-code-custom' % {'FBUTILS_APP_DOMAIN': quote_plus(self.FBUTILS_APP_DOMAIN)})
         fb_api_base_dialog = self._fb_api_base__dialog()
         self.assertEqual(url,
                          '%(FB_API_BASE_DIALOG)s/oauth?client_id=%(FBUTILS_APP_ID)s&scope=email&redirect_uri=https%%3A%%2F%%2F%(FBUTILS_APP_DOMAIN)s%%2Foauth-code-custom' % 
                             {'FBUTILS_APP_ID': hub.app_id,
-                             'FBUTILS_APP_DOMAIN': urllib.quote_plus(self.FBUTILS_APP_DOMAIN),
+                             'FBUTILS_APP_DOMAIN': quote_plus(self.FBUTILS_APP_DOMAIN),
                              'FB_API_BASE_DIALOG': fb_api_base_dialog,
                             }
                          )
@@ -93,7 +97,7 @@ class TestFacebookUtils_Authenticated_Core(object):
         self.assertEqual(url,
                          '%(FB_API_BASE_DIALOG)s/oauth?client_id=%(FBUTILS_APP_ID)s&scope=email,user_birthday&redirect_uri=https%%3A%%2F%%2F%(FBUTILS_APP_DOMAIN)s%%2Foauth-code' % 
                             {'FBUTILS_APP_ID': hub.app_id,
-                             'FBUTILS_APP_DOMAIN': urllib.quote_plus(self.FBUTILS_APP_DOMAIN),
+                             'FBUTILS_APP_DOMAIN': quote_plus(self.FBUTILS_APP_DOMAIN),
                              'FB_API_BASE_DIALOG': fb_api_base_dialog,
                             }
                          )
@@ -168,7 +172,7 @@ class TestFacebookUtils_Authenticated_Core(object):
                 {"method": "GET", 'relative_url': "/me/feed?limit=%s&fields=%s" % (FB_LIMIT_LINKS, FB_FIELDS), },
             ],
         }
-        fb_data = hub.api_proxy(url="""https://graph.facebook.com""", expected_format='json.load', post_data=fb_post_data)
+        fb_data = hub.api_proxy(expected_format='json.load', post_data=fb_post_data)
         self.assertTrue(fb_data)
         # TODO - test to see we have the fields present
 
@@ -204,26 +208,26 @@ class TestFacebookUtils_Authenticated_Core(object):
         
         # make sure we tracked a _last_response
         self.assertTrue(hub._last_response)
-        self.assertIsNone(hub.last_response_ratelimited())
+        self.assertIsNone(hub.last_response_is_ratelimited)
 
 
     def test_graph__no_url__get_object_single(self):
         urls = {'https://example.com': '482839044422',
                 }
-        url = urls.keys()[0]
+        url = list(urls.keys())[0]
         hub = self._newHub()
         get_data = {'ids': url,
                     }
+        if hub.fb_api_version >= 2.11:
+            get_data['fields'] = 'id,og_object'
         # in 2.3 we didn't need to pass in an access token. in 2.4 we do.
         fb_data = hub.api_proxy(expected_format='json.load', get_data=get_data, access_token=self.FBUTILS_ACCESS_TOKEN)
-        self.assertIn(url, fb_data)
         self.assertIn('og_object', fb_data[url])
         self.assertIn('id', fb_data[url]['og_object'])
-        self.assertEquals(fb_data[url]['og_object']['id'], urls[url])
-        
+        self.assertEqual(fb_data[url]['og_object']['id'], urls[url])
         # make sure we tracked a _last_response
         self.assertTrue(hub._last_response)
-        self.assertIsNone(hub.last_response_ratelimited())
+        self.assertIsNone(hub.last_response_is_ratelimited)
 
     def test_graph__bad_url(self):
         hub = self._newHub()
@@ -285,36 +289,40 @@ class TestFacebookUtils_UnAuthenticated(object):
     def test_graph__get_object_single(self):
         urls = {'https://example.com': '482839044422',
                 }
-        url = urls.keys()[0]
+        url = list(urls.keys())[0]
         hub = self._newHub()
         get_data = {'ids': url,
                     }
-        fb_data = hub.api_proxy(url="""https://graph.facebook.com""", expected_format='json.load', get_data=get_data)
+        fb_data = hub.api_proxy(url="https://graph.facebook.com", expected_format='json.load', get_data=get_data)
         self.assertIn(url, fb_data)
         self.assertIn('og_object', fb_data[url])
         self.assertIn('id', fb_data[url]['og_object'])
-        self.assertEquals(fb_data[url]['og_object']['id'], urls[url])
+        self.assertEqual(fb_data[url]['og_object']['id'], urls[url])
         
         # make sure we tracked a _last_response
         self.assertTrue(hub._last_response)
-        self.assertIsNone(hub.last_response_ratelimited())
+        self.assertIsNone(hub.last_response_is_ratelimited)
 
     def test_graph__get_object_multiple(self):
         # url: facebook opengraph id
-        urls = {'http://example.com': '395320319544',
-                'https://example.com': '482839044422',
-                'http://facebook.com': '10151063484068358',
-                'https://facebook.com': '10151063484068358',
+        urls = {'http://example.com': '395320319544',  # sometimes sends 389691382139 ??
+                'https://example.com': '482839044422',  # 
+                'http://facebook.com': '10151063484068358',  # ?id=http%3A%2F%2Ffacebook.com
+                'https://facebook.com': '10151063484068358',  # facebook graph has a bug where the wrong object is returned FOR FACEBOOK.com
                 }
         hub = self._newHub()
-        get_data = {'ids': ','.join(urls.keys()),
-                    }
-        fb_data = hub.api_proxy(url="""https://graph.facebook.com""", expected_format='json.load', get_data=get_data)
-        for url in urls.keys():
+        
+        # we can't pass `get_data` in as a dict, because it will urlencode the , separating the values. 
+        get_data = 'ids=%s' % ','.join([quote_plus(i) for i in list(urls.keys())])
+        if hub.fb_api_version >= 2.11:
+            get_data += '&fields=id,og_object'
+
+        fb_data = hub.api_proxy(url="https://graph.facebook.com", expected_format='json.load', get_data=get_data)
+        for url in list(urls.keys()):
             self.assertIn(url, fb_data)
             self.assertIn('og_object', fb_data[url])
             self.assertIn('id', fb_data[url]['og_object'])
-            self.assertEquals(fb_data[url]['og_object']['id'], urls[url])
+            self.assertEqual(fb_data[url]['og_object']['id'], urls[url])
 
 
 # ==============================================================================
@@ -323,27 +331,32 @@ class TestFacebookUtils_UnAuthenticated(object):
 class TestFacebookUtils_Authenticated_NoVersion(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
     fb_api_version = None
 
-class TestFacebookUtils_Authenticated_23(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
-    fb_api_version = '2.3'
-    expect_email_in_profile = True
-
-class TestFacebookUtils_Authenticated_24(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
-    fb_api_version = '2.4'
-
-class TestFacebookUtils_Authenticated_25(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
-    fb_api_version = '2.5'
-
-class TestFacebookUtils_Authenticated_26(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
-    fb_api_version = '2.6'
-
-class TestFacebookUtils_Authenticated_27(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
+class TestFacebookUtils_Authenticated_2_7(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
     fb_api_version = '2.7'
 
-class TestFacebookUtils_Authenticated_28(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
+class TestFacebookUtils_Authenticated_2_8(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
     fb_api_version = '2.8'
 
-class TestFacebookUtils_Authenticated_29(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
+class TestFacebookUtils_Authenticated_2_9(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
     fb_api_version = '2.9'
+
+class TestFacebookUtils_Authenticated_2_10(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
+    fb_api_version = '2.10'
+
+class TestFacebookUtils_Authenticated_2_11(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
+    fb_api_version = '2.11'
+
+class TestFacebookUtils_Authenticated_2_12(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
+    fb_api_version = '2.12'
+
+class TestFacebookUtils_Authenticated_3_0(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
+    fb_api_version = '3.0'
+
+class TestFacebookUtils_Authenticated_3_1(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
+    fb_api_version = '3.1'
+
+class TestFacebookUtils_Authenticated_3_2(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
+    fb_api_version = '3.2'
 
 
 # test Unaauthenticated
@@ -351,24 +364,32 @@ class TestFacebookUtils_Authenticated_29(TestFacebookUtils_Authenticated_Core, u
 class TestFacebookUtils_UnAuthenticated_NoVersion(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
     fb_api_version = None
 
-class TestFacebookUtils_UnAuthenticated_24(TestFacebookUtils_UnAuthenticated, unittest.TestCase):
-    fb_api_version = '2.4'
-
-class TestFacebookUtils_UnAuthenticated_25(TestFacebookUtils_UnAuthenticated, unittest.TestCase):
-    fb_api_version = '2.5'
-
-class TestFacebookUtils_UnAuthenticated_26(TestFacebookUtils_UnAuthenticated, unittest.TestCase):
-    fb_api_version = '2.6'
-
-class TestFacebookUtils_UnAuthenticated_27(TestFacebookUtils_UnAuthenticated, unittest.TestCase):
+class TestFacebookUtils_UnAuthenticated_2_7(TestFacebookUtils_UnAuthenticated, unittest.TestCase):
     fb_api_version = '2.7'
 
-class TestFacebookUtils_UnAuthenticated_28(TestFacebookUtils_UnAuthenticated, unittest.TestCase):
+class TestFacebookUtils_UnAuthenticated_2_8(TestFacebookUtils_UnAuthenticated, unittest.TestCase):
     fb_api_version = '2.8'
 
-class TestFacebookUtils_UnAuthenticated_29(TestFacebookUtils_UnAuthenticated, unittest.TestCase):
+class TestFacebookUtils_UnAuthenticated_2_9(TestFacebookUtils_UnAuthenticated, unittest.TestCase):
     fb_api_version = '2.9'
 
+class TestFacebookUtils_UnAuthenticated_2_10(TestFacebookUtils_UnAuthenticated, unittest.TestCase):
+    fb_api_version = '2.10'
+
+class TestFacebookUtils_UnAuthenticated_2_11(TestFacebookUtils_UnAuthenticated, unittest.TestCase):
+    fb_api_version = '2.11'
+
+class TestFacebookUtils_UnAuthenticated_2_12(TestFacebookUtils_UnAuthenticated, unittest.TestCase):
+    fb_api_version = '2.12'
+
+class TestFacebookUtils_UnAuthenticated_3_0(TestFacebookUtils_UnAuthenticated, unittest.TestCase):
+    fb_api_version = '3.0'
+
+class TestFacebookUtils_UnAuthenticated_3_1(TestFacebookUtils_UnAuthenticated, unittest.TestCase):
+    fb_api_version = '3.1'
+
+class TestFacebookUtils_UnAuthenticated_3_2(TestFacebookUtils_UnAuthenticated, unittest.TestCase):
+    fb_api_version = '3.2'
 
 # ==============================================================================
 

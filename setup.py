@@ -42,11 +42,13 @@ setup(
     zip_safe=False,
     install_requires=[
         'requests>=1.2'
+        'six',
     ],
     test_suite='tests',
     classifiers=[
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python',
+        'Programming Language :: Python :: 3',
         "Framework :: Pyramid",
         "Intended Audience :: Developers",
     ]

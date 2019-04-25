@@ -1,3 +1,4 @@
+from __future__ import print_function
 import facebook_utils
 import os
 import pdb
@@ -54,7 +55,7 @@ def new_fb_object():
 
 def _get_code(_hub):
     print("Visit the following url to approve.  You will be redirected back to the `FBUTILS_REDIRECT_URI_OAUTHCODE` URI")
-    print _hub.oauth_code__url_dialog()
+    print(_hub.oauth_code__url_dialog())
     _code = _input("""What is the `code` in the url?""")
     _code = _code.strip()
     # remove fragments
@@ -68,7 +69,7 @@ hub = new_fb_object()
 
 # this one is a bit extended. not always needed
 if True:
-    print("*" * 40)
+    print(("*" * 40))
     _code = _get_code(hub)
     print("fbutils will now try to exchange the code for an access token.")
     print("fbutils will access the facebook graph api:")
@@ -76,7 +77,7 @@ if True:
     access_token = hub.oauth_code__get_access_token(submitted_code=_code)
     print("The access token is: `%s`" % access_token)
 
-    print("*" * 40)
+    print(("*" * 40))
     print("let's do this again, but save the full response.")
     _code = _get_code(hub)
     print(hub.oauth_code__url_access_token(submitted_code=_code, redirect_uri=FBUTILS_REDIRECT_URI_OAUTHCODE, scope=FBUTILS_APP_SCOPE))
@@ -86,7 +87,7 @@ if True:
     print("The access token is: `%s`" % access_token)
     print("The response is: %s" % pprint.pformat(response))
 
-print("*" * 40)
+print(("*" * 40))
 print("now let's try to get the profile&token at once.")
 _code = _get_code(hub)
 (access_token,
@@ -96,13 +97,13 @@ print("The access token is: `%s`" % access_token)
 print("The profile is: %s" % pprint.pformat(profile))
 
 
-print("*" * 40)
+print(("*" * 40))
 print("now let's grab the profile alone.")
 url_me = hub.graph__url_me_for_access_token(access_token)
 fb_data = hub.api_proxy(url=url_me, expected_format='json.load')
-print fb_data
+print(fb_data)
 
-print("*" * 40)
+print(("*" * 40))
 print("now let's grab a batch.")
 FB_LIMIT_LINKS = 1
 FB_LIMIT_HOME = 1

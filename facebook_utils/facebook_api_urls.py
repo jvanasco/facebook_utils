@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import urllib
+from six.moves.urllib.parse import urlencode
+from six.moves.urllib.parse import quote_plus
 
 # ==============================================================================
 
@@ -48,7 +49,7 @@ class FacebookApiUrls(object):
         auth_type = '&auth_type=%s' % auth_type if auth_type else ''
         return URL_OAUTH_DIALOG_CODE.format(fb_url_web=fb_url_web,
                                             app_id=app_id,
-                                            redirect_uri=urllib.quote_plus(redirect_uri),
+                                            redirect_uri=quote_plus(redirect_uri),
                                             scope=scope or '',
                                             auth_type=auth_type,
                                             )
@@ -58,7 +59,7 @@ class FacebookApiUrls(object):
         auth_type = '&auth_type=%s' % auth_type if auth_type else ''
         url = URL_OAUTH_DIALOG_TOKEN.format(fb_url_web=fb_url_web,
                                             app_id=app_id,
-                                            redirect_uri=urllib.quote_plus(redirect_uri),
+                                            redirect_uri=quote_plus(redirect_uri),
                                             scope=scope or '',
                                             auth_type=auth_type,
                                             )
@@ -68,7 +69,7 @@ class FacebookApiUrls(object):
     def oauth_code__url_access_token(cls, fb_url_graph_api, app_id, redirect_uri, app_secret, submitted_code):
         url = URL_OAUTH_ACCESSTOKEN_CODE.format(fb_url_graph_api=fb_url_graph_api,
                                                 app_id=app_id,
-                                                redirect_uri=urllib.quote_plus(redirect_uri),
+                                                redirect_uri=quote_plus(redirect_uri),
                                                 app_secret=app_secret,
                                                 code=submitted_code,
                                                 )
@@ -88,7 +89,7 @@ class FacebookApiUrls(object):
         qs = {'access_token': access_token, }
         if fields is not None:
             qs['fields'] = fields
-        qs = urllib.urlencode(qs)
+        qs = urlencode(qs)
         url = URL_GRAPH_ME_ACCESS_TOKEN.format(fb_url_graph_api=fb_url_graph_api,
                                                qs=qs,
                                                )
@@ -108,7 +109,7 @@ class FacebookApiUrls(object):
         qs = {'access_token': access_token, }
         if fields is not None:
             qs['fields'] = fields
-        qs = urllib.urlencode(qs)
+        qs = urlencode(qs)
         if action is None:
             url = URL_GRAPH_USER_ACCESS_TOKEN.format(fb_url_graph_api=fb_url_graph_api,
                                                      user=user,

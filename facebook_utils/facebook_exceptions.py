@@ -1,4 +1,5 @@
 import datetime
+from six import text_type
 
 
 class ApiError(Exception):
@@ -26,10 +27,11 @@ class ApiError(Exception):
         self.raised = raised
 
     def __str__(self):
-        return u'ApiError: {code} | {type} | {message}'.format(code=self.code,
-                                                               type=self.type,
-                                                               message=self.message,
-                                                               )
+        return text_type('ApiError: {code} | {type} | {message}')\
+            .format(code=self.code,
+                    type=self.type,
+                    message=self.message,
+                    )
 
 
 class ApiAuthError(ApiError):
@@ -95,6 +97,13 @@ class ApiRuntimeGraphMethodError(ApiError):
     pass
 
 
+class ApiRatelimitedError(ApiError):
+    """
+    Raised if the application is ratelimited
+    """
+    pass
+
+
 class ApiUnhandledError(ApiError):
     """
     Raised if something bad happened, so you only have to track one error.
@@ -137,7 +146,7 @@ def reformat_error(json_string, raised=None):
             'raised': None
             }
 
-    for k in rval.keys():
+    for k in list(rval.keys()):
         if k in json_string:
             rval[k] = json_string[k]
     if raised is not None:
