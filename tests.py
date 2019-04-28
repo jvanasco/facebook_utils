@@ -8,6 +8,13 @@ except:
     from urllib.parse import quote_plus
 
 import facebook_utils as fb
+from facebook_utils.facebook_exceptions import ApiRatelimitedError
+
+
+# ==============================================================================
+
+
+APP_RATELIMITED = False
 
 
 # ==============================================================================
@@ -181,7 +188,7 @@ class TestFacebookUtils_Authenticated_Core(object):
         FB_LIMIT_LINKS = 1
         FB_LIMIT_HOME = 1
         # FB_FIELDS = 'id,from,message,comments,created_time,link,caption'
-        FB_FIELDS = sorted(list(set('id,name,description,message,created_time,caption,description'.split(','))))
+        FB_FIELDS = sorted(set('id,name,description,message,created_time,caption,description'.split(',')))
         fb_post_data = {
             'access_token': self.FBUTILS_ACCESS_TOKEN,
             'batch': [
@@ -193,6 +200,7 @@ class TestFacebookUtils_Authenticated_Core(object):
         self.assertTrue(fb_data)
         # TODO - test to see we have the batch fields present
 
+    @unittest.skipIf(APP_RATELIMITED, "APP_RATELIMITED")
     def test_graph__url__upgrades(self):
         hub = self._newHub()
         fb_data = hub.api_proxy(url="/me/permissions", access_token=self.FBUTILS_ACCESS_TOKEN)
@@ -208,9 +216,10 @@ class TestFacebookUtils_Authenticated_Core(object):
         
         # make sure we tracked a _last_response
         self.assertTrue(hub._last_response)
-        self.assertIsNone(hub.last_response_is_ratelimited)
+        self.assertFalse(hub.last_response_is_ratelimited)
 
 
+    @unittest.skipIf(APP_RATELIMITED, "APP_RATELIMITED")
     def test_graph__no_url__get_object_single(self):
         urls = {'https://example.com': '482839044422',
                 }
@@ -221,13 +230,17 @@ class TestFacebookUtils_Authenticated_Core(object):
         if hub.fb_api_version >= 2.11:
             get_data['fields'] = 'id,og_object'
         # in 2.3 we didn't need to pass in an access token. in 2.4 we do.
-        fb_data = hub.api_proxy(expected_format='json.load', get_data=get_data, access_token=self.FBUTILS_ACCESS_TOKEN)
+        try:
+            fb_data = hub.api_proxy(expected_format='json.load', get_data=get_data, access_token=self.FBUTILS_ACCESS_TOKEN)
+        except ApiRatelimitedError:
+            APP_RATELIMITED = True
+            raise
         self.assertIn('og_object', fb_data[url])
         self.assertIn('id', fb_data[url]['og_object'])
         self.assertEqual(fb_data[url]['og_object']['id'], urls[url])
         # make sure we tracked a _last_response
         self.assertTrue(hub._last_response)
-        self.assertIsNone(hub.last_response_is_ratelimited)
+        self.assertFalse(hub.last_response_is_ratelimited)
 
     def test_graph__bad_url(self):
         hub = self._newHub()
@@ -239,6 +252,7 @@ class TestFacebookUtils_Authenticated_Core(object):
         self.assertRaises(fb.ApiError, lambda: _bad_url_wtf())
 
 
+    @unittest.skipIf(APP_RATELIMITED, "APP_RATELIMITED")
     def test_permissions_access(self):
         def _validate_payload(_payload):
             self.assertIn('data', _payload)
@@ -248,10 +262,13 @@ class TestFacebookUtils_Authenticated_Core(object):
                     _has_email = True if datum['status'] == 'granted' else False
             self.assertTrue(_has_email)
         
-        
         # SETUP start
         hub = self._newHub()
-        fb_data = hub.graph__get_profile_for_access_token(access_token=self.FBUTILS_ACCESS_TOKEN)
+        try:
+            fb_data = hub.graph__get_profile_for_access_token(access_token=self.FBUTILS_ACCESS_TOKEN)
+        except ApiRatelimitedError:
+            APP_RATELIMITED = True
+            raise
         self.assertTrue(fb_data)
         user_id = fb_data['id']
         # SETUP end
@@ -301,28 +318,35 @@ class TestFacebookUtils_UnAuthenticated(object):
         
         # make sure we tracked a _last_response
         self.assertTrue(hub._last_response)
-        self.assertIsNone(hub.last_response_is_ratelimited)
+        self.assertFalse(hub.last_response_is_ratelimited)
 
     def test_graph__get_object_multiple(self):
+        """
+        facebook's API is a little less than stellar.
+            facebook.com SHOULD be ? 405613579725? however sometimes it returns `10151063484068358`, which is the wrong object (http and https)
+                        it also returns 411149314032
+            http://example.com comes back as either 395320319544 or 389691382139
+            i filed bug reports for both
+        """
         # url: facebook opengraph id
-        urls = {'http://example.com': '395320319544',  # sometimes sends 389691382139 ??
-                'https://example.com': '482839044422',  # 
-                'http://facebook.com': '10151063484068358',  # ?id=http%3A%2F%2Ffacebook.com
-                'https://facebook.com': '10151063484068358',  # facebook graph has a bug where the wrong object is returned FOR FACEBOOK.com
+        urls = {'http://example.com': ('395320319544', '389691382139'),  # sometimes sends 389691382139 ??
+                'https://example.com': ('482839044422',),   # only this has popped up so far
+                'http://facebook.com': ('10151063484068358', '405613579725', '411149314032'),  # ?id=http%3A%2F%2Ffacebook.com
+                'https://facebook.com': ('10151063484068358', '405613579725', '411149314032'),  # facebook graph has a bug where the wrong object is returned FOR FACEBOOK.com
                 }
         hub = self._newHub()
         
         # we can't pass `get_data` in as a dict, because it will urlencode the , separating the values. 
-        get_data = 'ids=%s' % ','.join([quote_plus(i) for i in list(urls.keys())])
+        get_data = 'ids=%s' % ','.join([quote_plus(i) for i in urls.keys()])
         if hub.fb_api_version >= 2.11:
             get_data += '&fields=id,og_object'
 
         fb_data = hub.api_proxy(url="https://graph.facebook.com", expected_format='json.load', get_data=get_data)
-        for url in list(urls.keys()):
+        for url in urls.keys():
             self.assertIn(url, fb_data)
             self.assertIn('og_object', fb_data[url])
             self.assertIn('id', fb_data[url]['og_object'])
-            self.assertEqual(fb_data[url]['og_object']['id'], urls[url])
+            self.assertIn(fb_data[url]['og_object']['id'], urls[url])  # test the opengraph id against many potentials
 
 
 # ==============================================================================
@@ -361,7 +385,7 @@ class TestFacebookUtils_Authenticated_3_2(TestFacebookUtils_Authenticated_Core, 
 
 # test Unaauthenticated
 
-class TestFacebookUtils_UnAuthenticated_NoVersion(TestFacebookUtils_Authenticated_Core, unittest.TestCase):
+class TestFacebookUtils_UnAuthenticated_NoVersion(TestFacebookUtils_UnAuthenticated, unittest.TestCase):
     fb_api_version = None
 
 class TestFacebookUtils_UnAuthenticated_2_7(TestFacebookUtils_UnAuthenticated, unittest.TestCase):

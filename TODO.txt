@@ -1,3 +1,10 @@
+ToDo
+=======
+- I think in the future, the 'dicts' that come back should be cast into a 'response' object, and there will be some metadata attached to it.
+- Remove deprecated response parsing; everything seems to be JSON now
+- Use (and re-use) requests' "Session" objects
+- The Pyramid setup could/should use a per-request reified object via `add_request_method`
+
 [ ] better catch the API errors and handle ratelimits, such as raising a `ApiRatelimitedError`
 [ ] better tool on generating needed vars for the test 
 [ ] strip out hashbang '#' on interactive tool

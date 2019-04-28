@@ -1,3 +1,10 @@
+0.50.5 (2019-04-26)
+------------------
+- undid some aggressive 2to3 conversions
+- integrating ratelimit detection and errors
+- last_response_usage is a property now
+
+
 0.50.4 (2019-04-25)
 ------------------
 - now testing facebook api versions 2.7 - 3.2

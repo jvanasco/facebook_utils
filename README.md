@@ -1,7 +1,7 @@
 facebook_utils
 ~~~~~~~~~~~~
 
-A collection of utilities for integrating user accounts with Facebook.com.  
+A collection of utilities for integrating user accounts with Facebook.com.
 
 Right now this handles oauth login and graph API operations
 
@@ -15,8 +15,8 @@ Purpose
 2. When this was first released, there were no other Python SDKs actively developed.
 
 3. There are a handful of Pyramid/Misc Framework utilities that provide a complete
-drop-in integration with Facebook.com for account logins and integrations; 
-This is NOT one of them. Sometimes you need to control the User Experience and 
+drop-in integration with Facebook.com for account logins and integrations;
+This is NOT one of them. Sometimes you need to control the User Experience and
 have all your UX customized; if so, this is for you.
 
 
@@ -38,13 +38,13 @@ Or make it unuthenticated. It's up to you.
 
 This was originally built/intended for use under the Pyramid environment.
 
-calling `FacebookPyramid()` will create a new object that subclasses 
-`FacebookHub()` objects, using  default settings from your .ini and 
+calling `FacebookPyramid()` will create a new object that subclasses
+`FacebookHub()` objects, using  default settings from your .ini and
 pulling variables from 'request' as needed.
 
 As of v0.5.0 it supports the `appsecret_proof` lockdown on the client level.
 
-Any requests to the hub will attempt to create the `appsecret_proof` hmac if it 
+Any requests to the hub will attempt to create the `appsecret_proof` hmac if it
 is not explicitly provided.  It will be based on the `access_token` appearing as
 (in the order of precedence):
 
@@ -53,7 +53,7 @@ is not explicitly provided.  It will be based on the `access_token` appearing as
 * an `access_token` in the POST payload
 
 This will allow you to follow paginated links from the API as-is, upgrading as needed
-    
+
 
 IMPORTANT NOTES
 ===============
@@ -101,10 +101,10 @@ if you store the access token
 Unauthenticated Queries
 =========================
 
-Queries without authentication required can be performed using the `.api_proxy` 
+Queries without authentication required can be performed using the `.api_proxy`
 method.
 
-If you don't have any authentication data, you can create an unauthenticated 
+If you don't have any authentication data, you can create an unauthenticated
 hub, which allows you to leverage this library for streamlined requests and
 response processing.
 
@@ -127,15 +127,15 @@ The last response is stored `FacebookHub._last_response` for inspection.
 A convenience method will check for the `X-Page-Usage` ratelimiting header:
 
     print hub.last_response_ratelimited()
-    
+
 If no ratelimiting is set, it will return None.
 
-If facebook has set ratelimiting, it will convert the JSON-formatted string in 
+If facebook has set ratelimiting, it will convert the JSON-formatted string in
 the header into a python dict:
 
     print hub.last_response_ratelimited()
-    > {"call_count"    : x, 
-       "total_time"    : y, 
+    > {"call_count"    : x,
+       "total_time"    : y,
        "total_cputime" : z
        }
 
@@ -178,9 +178,9 @@ or:
     facebook.app.api_version = v2.8
     facebook.app.oauth_code_redirect_uri=  http://127.0.0.1:5010/account/facebook-authenticate-oauth?response_type=code
     facebook.app.oauth_token_redirect_uri= http://127.0.0.1:5010/account/facebook-authenticate-oauth-token?response_type=token
-    
-    
-    
+
+
+
 Make sure your endpoints are whitelisted on the Facebook console
 
 integrate into your handlers:
@@ -294,7 +294,9 @@ it should be simple...
     export FBUTILS_APP_DOMAIN='whitelisted domain'
     export FBUTILS_ACCESS_TOKEN="from_API_operations, or generate via developer interface"
     export FBUTILS_APP_SECRETPROOF=set if you locked this down on facebook
-    
+    export FBUTILS_REDIRECT_URI_OAUTHCODE= configured on the facebook dashboard
+
+
 Integrated Tests
 ----------------
 
@@ -305,13 +307,5 @@ There is also a `test_interactive.py` file that uses the same environment vars
 That will allow you to step through a few scenarios and set up an integration with facebook itself.
 
 
-ToDo
-=======
-- I think in the future, the 'dicts' that come back should be cast into a 'response' object, and there will be some metadata attached to it.
-- Remove deprecated response parsing; everything seems to be JSON now
-- Use (and re-use) requests' "Session" objects 
-- The Pyramid setup could/should use a per-request reified object via `add_request_method`
-
-:copyright: 2012-2017 by Jonathan Vanasco
+:copyright: 2012-2019 by Jonathan Vanasco
 license: BSD
-"""

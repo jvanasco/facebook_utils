@@ -44,6 +44,7 @@ from .facebook_exceptions import (ApiError,
                                   ApiAuthError,
                                   ApiAuthExpiredError,
                                   ApiApplicationError,
+                                  ApiRatelimitedError,
                                   ApiResponseError,
                                   ApiRuntimeVerirficationFormatError,
                                   ApiRuntimeGrantError,
@@ -92,6 +93,7 @@ class FacebookHub(object):
 
     # stash for debugging
     _last_response = None
+    _penultimate_response = None
 
     def __init__(self,
                  mask_unhandled_exceptions=False,
@@ -199,35 +201,54 @@ class FacebookHub(object):
                                                             submitted_code=submitted_code,
                                                             )
 
+    def last_response_ratelimited(self):
+        warn_future("""Deprecated `last_response_ratelimited()`; call `last_response_usage` property instead""")
+        return self.last_response_usage
+
+    @property
     def last_response_usage(self):
         """
-        This checks headers for `x-page-usage` or `x-app-suage`
+        This property checks headers for `x-page-usage`, `x-app-usage`, x-ad-account-usage:
 
-            'x-app-usage': '{"call_count":0,"total_cputime":0,"total_time":0}'
+        This will return a reporting dict or none
+        The reporting dict will have decoded of the headers, if possible, or be an empty dict
+
+            reporting = {
+                        # The values for x, y and z are whole numbers representing the percentage used values for each of the metrics. When any of these metrics exceed 100 the app is rate limited.
+                        'X-Page-Usage': {"call_count":0,
+                                          "total_cputime":0,
+                                          "total_time":0
+                                          }'
+                        # The values for x, y and z are whole numbers representing the percentage used values for each of the metrics. When any of these metrics exceed 100 the app is rate limited.
+                         'x-app-usage': {"call_count":0,
+                                         "total_cputime":0,
+                                         "total_time":0
+                                         }'
+                        ''
+                         }
         """
-        if self._last_response:
+        # a bad `Request` is an object that evaluates to None. grr.
+        if self._last_response is not None:
             if self._last_response.headers:
-                if 'X-Page-Usage' in self._last_response.headers:
-                    return json.loads(self._last_response.headers['X-Page-Usage'])
-                if 'x-app-usage' in self._last_response.headers:
-                    return json.loads(self._last_response.headers['x-app-usage'])
+                reporting = {}
+                for _report in ('X-Page-Usage', 'x-app-usage', 'x-ad-account-usage', ):
+                    if _report in self._last_response.headers:
+                        reporting[_report] = json.loads(self._last_response.headers[_report])
+                return reporting
         return None
-
-    def last_response_ratelimited(self):
-        warn_future("""Deprecated `last_response_ratelimited`; call `last_response_usage` instead""")
-        return self.last_response_usage()
 
     @property
     def last_response_is_ratelimited(self):
         """
         checks for ratelimited response header
         """
-        if self._last_response:
+        # a bad `Request` is an object that evaluates to None. grr.
+        if self._last_response is not None:
             if self._last_response.headers:
                 if 'WWW-Authenticate' in self._last_response.headers:
-                    if (self._last_response.raw.headers['WWW-Authenticate'] == 'OAuth "Facebook Platform" "invalid_request" "(#4) Application request'):
+                    if (self._last_response.headers['WWW-Authenticate'] == 'OAuth "Facebook Platform" "invalid_request" "(#4) Application request limit reached"'):
                         return True
-        return None
+        return False
 
     def generate__appsecret_proof(self, access_token=None):
         """
@@ -339,6 +360,7 @@ class FacebookHub(object):
 
             # store the response for possible later debugging by user
             # e.g. `response.headers['X-FB-Debug']`
+            self._penultimate_response = self._last_response
             self._last_response = response
 
             response_content = response.text
@@ -413,17 +435,20 @@ class FacebookHub(object):
                                 raise ApiAuthError(**error)
                             raise ApiError(**error)
                         raise ApiError(message='I don\'t know how to handle this error (%s)' % rval, code=400)
-                    except json.JSONDecodeError as e:
-                        raise ApiError(message='Could not parse JSON from the error (%s)' % rval, code=400, raised=e)
-                    except:
+                    except json.JSONDecodeError as exc:
+                        raise ApiError(message='Could not parse JSON from the error (%s)' % rval, code=400, raised=exc)
+                    except Exception as exc:
                         raise
+                if self.last_response_is_ratelimited:
+                    raise ApiRatelimitedError(message='Application is ratelimited. %s' % self.last_response_usage, code=response.status_code)
                 raise ApiError(message='Could not communicate with the API', code=response.status_code)
             return response_content
-        except json.JSONDecodeError as e:
-            raise ApiError(message='Could not parse JSON from the error (%s)' % e, raised=e)
-        except Exception as e:
+        except json.JSONDecodeError as exc:
+            raise ApiError(message='Could not parse JSON from the error (%s)' % exc, raised=exc)
+        except Exception as exc:
             if self.mask_unhandled_exceptions:
-                raise ApiUnhandledError(raised=e)
+                if not isinstance(exc, ApiError):
+                    raise ApiUnhandledError(raised=exc)
             raise
 
     @require_authenticated_hub

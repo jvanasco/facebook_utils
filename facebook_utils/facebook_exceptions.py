@@ -100,6 +100,38 @@ class ApiRuntimeGraphMethodError(ApiError):
 class ApiRatelimitedError(ApiError):
     """
     Raised if the application is ratelimited
+
+    Select bits of text from Facebook's publicly shared documents are
+
+    The following text is copyright Facebook and appears on the url:
+        https://developers.facebook.com/docs/graph-api/advanced/rate-limiting/
+
+    -- - - ---- - - ---- - - ---- - - ---- - - ---- - - ---- - - ---- - - ---- -
+    All responses to calls made to the Graph API include an X-App-Usage HTTP header. This header contains the current percentage of usage for your app. This percentage is equal to the usage shown to you in the rate limiting graphs. Use this number to dynamically balance your call load to avoid being throttled.
+
+    The rate limiting header is a JSON-formatted string in the following form:
+
+        {
+          "call_count"    : x,
+          "total_time"    : y,
+          "total_cputime" : z
+        }
+
+    The values for x, y and z are whole numbers representing the percentage used values for each of the metrics. When any of these metrics exceed 100 the app is rate limited.
+
+    What Errors Will My App See?
+
+    Throttling Type	                At least	                Error Code
+    Application-level throttling    200 calls/person/hour       4
+    Account-level throttling        Not applicable              17
+    Page-level throttling           4800 calls/person/24-hours  32
+    Custom-level throttling         Not applicable              613
+
+    -- - - ---- - - ---- - - ---- - - ---- - - ---- - - ---- - - ---- - - ---- -
+
+    From Facebook's Application Dashboard, also copyright Facebook:
+
+    Rate limiting defines limits on how many API calls can be made within a specified time period. Application-level rate limits apply to calls made using any access token other than a Page access token and ads APIs calls. The total number of calls your app can make per hour is 200 times the number of users. Please note this isn't a per-user limit. Any individual user can make more than 200 calls per hour, as long as the total for all users does not exceed the app maximum.
     """
     pass
 
@@ -146,7 +178,7 @@ def reformat_error(json_string, raised=None):
             'raised': None
             }
 
-    for k in list(rval.keys()):
+    for k in rval.keys():
         if k in json_string:
             rval[k] = json_string[k]
     if raised is not None:
