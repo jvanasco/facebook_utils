@@ -363,6 +363,8 @@ class FacebookHub(object):
             self._penultimate_response = self._last_response
             self._last_response = response
 
+            # response.text is the decoded response
+            # response.content is the raw response
             response_content = response.text
 
             if response.status_code == 200:

@@ -1,3 +1,7 @@
+0.50.6 (unreleased)
+------------------
+- inline doc addition
+
 0.50.5 (2019-04-26)
 ------------------
 - undid some aggressive 2to3 conversions
