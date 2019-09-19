@@ -13,13 +13,7 @@ class ApiError(Exception):
     response = None
     raised = None
 
-    def __init__(self,
-                 code=None,
-                 type=None,
-                 message=None,
-                 response=None,
-                 raised=None,
-                 ):
+    def __init__(self, code=None, type=None, message=None, response=None, raised=None):
         self.code = code
         self.type = type
         self.message = message
@@ -27,17 +21,16 @@ class ApiError(Exception):
         self.raised = raised
 
     def __str__(self):
-        return text_type('ApiError: {code} | {type} | {message}')\
-            .format(code=self.code,
-                    type=self.type,
-                    message=self.message,
-                    )
+        return text_type("ApiError: {code} | {type} | {message}").format(
+            code=self.code, type=self.type, message=self.message
+        )
 
 
 class ApiAuthError(ApiError):
     """
     Facebook api authentification error
     """
+
     pass
 
 
@@ -45,6 +38,7 @@ class ApiAuthExpiredError(ApiAuthError):
     """
     Facebook api authentification error due to expiry
     """
+
     pass
 
 
@@ -52,6 +46,7 @@ class ApiApplicationError(ApiError):
     """
     Application set up error
     """
+
     pass
 
 
@@ -59,6 +54,7 @@ class ApiResponseError(ApiError):
     """
     Api Response Error
     """
+
     pass
 
 
@@ -66,6 +62,7 @@ class ApiRuntimeError(ApiError):
     """
     Runtime Error
     """
+
     pass
 
 
@@ -73,6 +70,7 @@ class ApiRuntimeVerirficationFormatError(ApiRuntimeError):
     """
     Raised if there is an error on the applicaiton when run: Invalid verification code format
     """
+
     pass
 
 
@@ -80,6 +78,7 @@ class ApiRuntimeGrantError(ApiRuntimeError):
     """
     Raised if there is an error on the application when run: Invalid verification code format
     """
+
     pass
 
 
@@ -87,6 +86,7 @@ class ApiRuntimeScopeError(ApiRuntimeError):
     """
     Raised if there is an error on the application when run: Invalid verification code format
     """
+
     pass
 
 
@@ -94,6 +94,7 @@ class ApiRuntimeGraphMethodError(ApiError):
     """
     Raised if there is an error on the application when run: Invalid graph method
     """
+
     pass
 
 
@@ -133,6 +134,7 @@ class ApiRatelimitedError(ApiError):
 
     Rate limiting defines limits on how many API calls can be made within a specified time period. Application-level rate limits apply to calls made using any access token other than a Page access token and ads APIs calls. The total number of calls your app can make per hour is 200 times the number of users. Please note this isn't a per-user limit. Any individual user can make more than 200 calls per hour, as long as the total for all users does not exceed the app maximum.
     """
+
     pass
 
 
@@ -167,25 +169,22 @@ class AuthenticatedHubRequired(Exception):
     """
     raised when an unauthenticated hub tries to perform an authenticated function
     """
+
     pass
 
 
 def reformat_error(json_string, raised=None):
 
-    rval = {'message': None,
-            'type': None,
-            'code': None,
-            'raised': None
-            }
+    rval = {"message": None, "type": None, "code": None, "raised": None}
 
     for k in rval.keys():
         if k in json_string:
             rval[k] = json_string[k]
     if raised is not None:
-        rval['raised'] = raised
+        rval["raised"] = raised
     return rval
 
 
 def facebook_time(fb_time):
     """parses Facebook's timestamp into a datetime object"""
-    return datetime.datetime.strptime(fb_time, '%Y-%m-%dT%H:%M:%S+0000')
+    return datetime.datetime.strptime(fb_time, "%Y-%m-%dT%H:%M:%S+0000")

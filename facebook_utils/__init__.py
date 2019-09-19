@@ -1,4 +1,4 @@
-__VERSION__ = '0.50.6'
+__VERSION__ = "0.50.6"
 
 from .facebook_utils import *
 from .facebook_api_urls import *
