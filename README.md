@@ -181,7 +181,7 @@ or:
 
 
 
-Make sure your endpoints are whitelisted on the Facebook console
+Make sure your endpoints are allowlisted on the Facebook console
 
 integrate into your handlers:
 
@@ -291,7 +291,7 @@ it should be simple...
     export FBUTILS_APP_SECRET="app_secret_from_facebook.com"
     export FBUTILS_APP_SCOPE="email,user_activities,user_status,user_posts"
 
-    export FBUTILS_APP_DOMAIN='whitelisted domain'
+    export FBUTILS_APP_DOMAIN='allowlisted domain'
     export FBUTILS_ACCESS_TOKEN="from_API_operations, or generate via developer interface"
     export FBUTILS_APP_SECRETPROOF=set if you locked this down on facebook
     export FBUTILS_REDIRECT_URI_OAUTHCODE= configured on the facebook dashboard
