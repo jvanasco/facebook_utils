@@ -122,7 +122,7 @@ class ApiRatelimitedError(ApiError):
 
     What Errors Will My App See?
 
-    Throttling Type	                At least	                Error Code
+    Throttling Type                 At least                    Error Code
     Application-level throttling    200 calls/person/hour       4
     Account-level throttling        Not applicable              17
     Page-level throttling           4800 calls/person/24-hours  32

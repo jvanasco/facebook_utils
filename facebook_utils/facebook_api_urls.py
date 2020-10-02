@@ -17,14 +17,14 @@ URL_OAUTH_DIALOG_TOKEN = u"{fb_url_web}/dialog/oauth?client_id={app_id}&scope={s
 URL_OAUTH_ACCESSTOKEN_CODE = u"{fb_url_graph_api}/oauth/access_token?client_id={app_id}&redirect_uri={redirect_uri}&client_secret={app_secret}&code={code}"
 URL_OAUTH_ACCESSTOKEN_EXTEND = u"{fb_url_graph_api}/oauth/access_token?grant_type=fb_exchange_token&client_id={app_id}&client_secret={app_secret}&fb_exchange_token={access_token}"
 URL_GRAPH_ME_ACCESS_TOKEN = (
-    u"{fb_url_graph_api}/me?{qs}"
-)  # qs is likely {access_token}&{fields}
+    u"{fb_url_graph_api}/me?{qs}"  # qs is likely {access_token}&{fields}
+)
 URL_GRAPH_USER_ACCESS_TOKEN = (
-    u"{fb_url_graph_api}/{user}?{qs}"
-)  # qs is likely {access_token}&{fields}
+    u"{fb_url_graph_api}/{user}?{qs}"  # qs is likely {access_token}&{fields}
+)
 URL_GRAPH_USER_ACTION_ACCESS_TOKEN = (
-    u"{fb_url_graph_api}/{user}/{action}?{qs}"
-)  # qs is likely {access_token}&{fields}
+    u"{fb_url_graph_api}/{user}/{action}?{qs}"  # qs is likely {access_token}&{fields}
+)
 URL_GRAPH_ACTION_LIST_ACCESS_TOKEN = u"{fb_url_graph_api}/me/{fb_app_namespace}:{fb_action_type_name}?access_token={access_token}"
 URL_GRAPH_ACTION_CREATE = (
     u"{fb_url_graph_api}/me/{fb_fb_app_namespace}:{fb_action_type_name}"

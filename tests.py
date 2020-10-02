@@ -37,7 +37,7 @@ class TestFacebookUtils_Authenticated_Core(object):
 
         This might need to be set:
             FBUTILS_APP_SECRETPROOF
-            
+
         Note:
             *FBUTILS_ACCESS_TOKEN can be a user access token (vs an app or page token)
             we just need the ability to test some actions that require an access token.

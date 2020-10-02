@@ -61,8 +61,7 @@ FB_API_VERSION = os.environ.get("FBUTILS_FB_API_VERSION", None)
 
 
 def require_authenticated_hub(f):
-    """simple decorator for FacebookHub class methods.
-    """
+    """simple decorator for FacebookHub class methods."""
 
     @wraps(f)
     def wrapper(self, *args, **kwargs):
