@@ -7,7 +7,7 @@ from setuptools import find_packages
 with open(
     os.path.join(os.path.dirname(__file__), "facebook_utils", "__init__.py")
 ) as v_file:
-    VERSION = re.compile(r".*__VERSION__ = '(.*?)'", re.S).match(v_file.read()).group(1)
+    VERSION = re.compile(r'.*__VERSION__ = "(.*?)"', re.S).match(v_file.read()).group(1)
 
 
 def get_docs():
@@ -29,6 +29,13 @@ def get_docs():
     return "\n".join(result)
 
 
+install_requires = [
+    "requests>=1.2",
+    "six",
+]
+tests_require = []
+testing_extras = tests_require + []
+
 setup(
     name="facebook_utils",
     author="Jonathan Vanasco",
@@ -41,7 +48,11 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-    install_requires=["requests>=1.2" "six"],
+    install_requires=install_requires,
+    tests_require=tests_require,
+    extras_require={
+        "testing": testing_extras,
+    },
     test_suite="tests",
     classifiers=[
         "License :: OSI Approved :: BSD License",
