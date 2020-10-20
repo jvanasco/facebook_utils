@@ -10,30 +10,22 @@ with open(
     VERSION = re.compile(r'.*__VERSION__ = "(.*?)"', re.S).match(v_file.read()).group(1)
 
 
-def get_docs():
-    result = []
-    in_docs = False
-    f = open(
-        os.path.join(os.path.dirname(__file__), "facebook_utils/facebook_utils.py")
-    )
-    try:
-        for line in f:
-            if in_docs:
-                if line.lstrip().startswith(":copyright:"):
-                    break
-                result.append(line[4:].rstrip())
-            elif line.strip() == 'r"""':
-                in_docs = True
-    finally:
-        f.close()
-    return "\n".join(result)
-
+long_description = (
+    description
+) = "Simple utilites for Facebook integration with your website."
+try:
+    here = os.path.abspath(os.path.dirname(__file__))
+    long_description = open(os.path.join(here, "README.md")).read()
+except:
+    pass
 
 install_requires = [
     "requests>=1.2",
     "six",
 ]
-tests_require = []
+tests_require = [
+    "pytest",
+]
 testing_extras = tests_require + []
 
 setup(
@@ -42,9 +34,11 @@ setup(
     author_email="jonathan@findmeon.com",
     version=VERSION,
     url="http://github.com/jvanasco/facebook_utils",
-    description="simple utilites for facebook integration.",
-    long_description=get_docs(),
+    description=description,
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     license="BSD",
+    keywords="facebook",
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,

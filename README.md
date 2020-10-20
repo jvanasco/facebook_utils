@@ -3,14 +3,14 @@ facebook_utils
 
 A collection of utilities for integrating user accounts with Facebook.com.
 
-Right now this handles oauth login and graph API operations
+Right now this handles oAuth login and Graph API operations
 
-This has been a general-purpose Python client for several years.  It works well.
+This has been a general-purpose Python client for several years. It works well.
 
 Purpose
 =======
 
-1. Once upon a time, Facebook offered a Python SDK.  That dropped it. Boo.
+1. Once upon a time, Facebook offered a Python SDK. They dropped it. Boo.
 
 2. When this was first released, there were no other Python SDKs actively developed.
 
@@ -45,7 +45,7 @@ pulling variables from 'request' as needed.
 As of v0.5.0 it supports the `appsecret_proof` lockdown on the client level.
 
 Any requests to the hub will attempt to create the `appsecret_proof` hmac if it
-is not explicitly provided.  It will be based on the `access_token` appearing as
+is not explicitly provided. It will be based on the `access_token` appearing as
 (in the order of precedence):
 
 * the `access_token` kwarg to the `.api_proxy() method
@@ -63,9 +63,9 @@ Facebook's API Support is inconsistent with the terminology:
 * The API endpoints expect `client_id` and `client_secret`
 * The Developer Tools provide `app id` and `app secret`
 
-For the sake of clarity, this library uses the terms `app_id` and `app_secret` because they are what Facebook's developer dashboard provides.  They are translated into the API Endpoint terms as required.
+For the sake of clarity, this library uses the terms `app_id` and `app_secret` because they are what Facebook's developer dashboard provides. They are translated into the API Endpoint terms as required.
 
-By default the API calls will be unversioned.  You should specify the API version.
+By default the API calls will be unversioned. You should specify the API version.
 
 
 Supports Two oAuth Flows
@@ -91,7 +91,7 @@ Flow 2 - Client Side
 `oauth_token_redirect_uri` -- as provided by `oauth_token__url_dialog()`
 3. upon success, users are redirected from facebook to
 `oauth_token__url_dialog` along with a query param titled `token` and a
-hash value titled `#access_token`.  The `access_token` is not visible to
+hash value titled `#access_token`. The `access_token` is not visible to
 the server, and must be transferred to your server via JavaScript or
 not-at-all should you simply want to do all your integration in JavaScript.
 4. profile data can be obtained with `.graph__get_profile(access_token)`
@@ -144,7 +144,8 @@ the header into a python dict:
 Some Notes
 ==========
 
-Most methods will let you override the 'scope' and 'request_uri'.  This shouldn't really be necessary and will probably be deprecated.
+Most methods will let you override the 'scope' and 'request_uri'.
+This shouldn't really be necessary and will probably be deprecated.
 
 Some methods support multiple ways of parsing results.
 Until recently, Facebook's API returned values either as url-encoded strings or as JSON.
@@ -232,11 +233,11 @@ Every `hub` object has an `api_proxy` method, which can be used to
 centralize communication to the Facebook API
 
 Facebook's API isn't very 'standardized' across the board. Some endpoints
-return json data, others return urlquoted data.  `api_proxy` doesn't care.
+return json data, others return urlquoted data. `api_proxy` doesn't care.
 it returns a dict from every endpoint, and does the conversion for you.
 
-The `api_proxy` defaults to a json load.  certain api calls will pass in
-a different `expected_format` argument.  The proxy will also handle 'batch'
+The `api_proxy` defaults to a json load. certain api calls will pass in
+a different `expected_format` argument. The proxy will also handle 'batch'
 style graph requests.
 
 When the api_proxy encounters an error, it returns `ApiError` or a more
@@ -266,8 +267,8 @@ The current exception class inheritance is:
 
 `AuthenticatedHubRequired` will be raised if a non-authenticated hub tries to perform authenticated actions
 
-the `api_proxy` will catch *most* errors.  since this is in development,
-i'm raising uncaught exceptions.  There will be a future "ApiUnhandledError"
+The `api_proxy` will catch *most* errors. Since this is in development,
+i'm raising uncaught exceptions. There will be a future "ApiUnhandledError"
 
 
 Testing

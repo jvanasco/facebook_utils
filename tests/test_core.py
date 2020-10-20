@@ -1,34 +1,58 @@
-import unittest
+import datetime
 import os
 import pdb
 import pprint
+import unittest
 
 try:
     from urllib import quote_plus
 except:
     from urllib.parse import quote_plus
 
+# local
 import facebook_utils as fb
 from facebook_utils.facebook_exceptions import ApiRatelimitedError
+from facebook_utils.api_versions import API_VERSIONS
 
 
 # ==============================================================================
 
 
 APP_RATELIMITED = False
+TODAY = datetime.datetime.today()
 
 
 # ==============================================================================
 
 
-class TestFacebookUtils_Authenticated_Core(object):
-    FBUTILS_ACCESS_TOKEN = None
+class _TestVersionedAPI(object):
+    """
+    mixin to ensure we do not test against old versions
+    """
+
     fb_api_version = None
+
+    def setUp(self):
+        if self.fb_api_version:
+            if self.fb_api_version not in API_VERSIONS:
+                raise ValueError(
+                    "Unrecognized fb_api_version: %s" % self.fb_api_version
+                )
+            (_api_start, _api_end) = API_VERSIONS[self.fb_api_version]
+            if _api_end and (_api_end < TODAY):
+                raise unittest.SkipTest(
+                    "Skipping Test against Facebook API v%s; Support ended %s"
+                    % (self.fb_api_version, _api_end)
+                )
+
+
+class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
+    FBUTILS_ACCESS_TOKEN = None
     expect_email_in_profile = False
 
     def _newHub(self):
         """
-        Ee need the following env variables set:
+        We need the following env variables set:
             FBUTILS_APP_ID
             FBUTILS_APP_SECRET
             FBUTILS_APP_SCOPE
@@ -263,9 +287,10 @@ class TestFacebookUtils_Authenticated_Core(object):
         urls = {"https://example.com": "482839044422"}
         url = list(urls.keys())[0]
         hub = self._newHub()
-        get_data = {"ids": url}
-        if hub.fb_api_version >= 2.11:
-            get_data["fields"] = "id,og_object"
+        get_data = {
+            "ids": url,
+            "fields": "id,og_object",
+        }
         # in 2.3 we didn't need to pass in an access token. in 2.4 we do.
         try:
             fb_data = hub.api_proxy(
@@ -338,9 +363,7 @@ class TestFacebookUtils_Authenticated_Core(object):
         pass
 
 
-class TestFacebookUtils_UnAuthenticated(object):
-    fb_api_version = None
-
+class TestFacebookUtils_UnAuthenticated(_TestVersionedAPI):
     def _newHub(self):
         """
         this is for unauthenticated tests
@@ -376,7 +399,7 @@ class TestFacebookUtils_UnAuthenticated(object):
             facebook.com SHOULD be ? 405613579725? however sometimes it returns `10151063484068358`, which is the wrong object (http and https)
                         it also returns 411149314032
             http://example.com comes back as either 395320319544 or 389691382139
-            i filed bug reports for both
+            I filed bug reports for both
         """
         # url: facebook opengraph id
         urls = {
@@ -399,9 +422,9 @@ class TestFacebookUtils_UnAuthenticated(object):
         hub = self._newHub()
 
         # we can't pass `get_data` in as a dict, because it will urlencode the , separating the values.
-        get_data = "ids=%s" % ",".join([quote_plus(i) for i in urls.keys()])
-        if hub.fb_api_version >= 2.11:
-            get_data += "&fields=id,og_object"
+        get_data = "ids=%s&fields=id,og_object" % ",".join(
+            [quote_plus(i) for i in urls.keys()]
+        )
 
         fb_data = hub.api_proxy(
             url="https://graph.facebook.com",
@@ -480,6 +503,42 @@ class TestFacebookUtils_Authenticated_3_2(
     fb_api_version = "3.2"
 
 
+class TestFacebookUtils_Authenticated_3_3(
+    TestFacebookUtils_Authenticated_Core, unittest.TestCase
+):
+    fb_api_version = "3.3"
+
+
+class TestFacebookUtils_Authenticated_4_0(
+    TestFacebookUtils_Authenticated_Core, unittest.TestCase
+):
+    fb_api_version = "4.0"
+
+
+class TestFacebookUtils_Authenticated_5_0(
+    TestFacebookUtils_Authenticated_Core, unittest.TestCase
+):
+    fb_api_version = "5.0"
+
+
+class TestFacebookUtils_Authenticated_6_0(
+    TestFacebookUtils_Authenticated_Core, unittest.TestCase
+):
+    fb_api_version = "6.0"
+
+
+class TestFacebookUtils_Authenticated_7_0(
+    TestFacebookUtils_Authenticated_Core, unittest.TestCase
+):
+    fb_api_version = "7.0"
+
+
+class TestFacebookUtils_Authenticated_8_0(
+    TestFacebookUtils_Authenticated_Core, unittest.TestCase
+):
+    fb_api_version = "8.0"
+
+
 # test Unaauthenticated
 
 
@@ -541,6 +600,42 @@ class TestFacebookUtils_UnAuthenticated_3_2(
     TestFacebookUtils_UnAuthenticated, unittest.TestCase
 ):
     fb_api_version = "3.2"
+
+
+class TestFacebookUtils_UnAuthenticated_3_3(
+    TestFacebookUtils_UnAuthenticated, unittest.TestCase
+):
+    fb_api_version = "3.3"
+
+
+class TestFacebookUtils_UnAuthenticated_4_0(
+    TestFacebookUtils_UnAuthenticated, unittest.TestCase
+):
+    fb_api_version = "4.0"
+
+
+class TestFacebookUtils_UnAuthenticated_5_0(
+    TestFacebookUtils_UnAuthenticated, unittest.TestCase
+):
+    fb_api_version = "5.0"
+
+
+class TestFacebookUtils_UnAuthenticated_6_0(
+    TestFacebookUtils_UnAuthenticated, unittest.TestCase
+):
+    fb_api_version = "6.0"
+
+
+class TestFacebookUtils_UnAuthenticated_7_0(
+    TestFacebookUtils_UnAuthenticated, unittest.TestCase
+):
+    fb_api_version = "7.0"
+
+
+class TestFacebookUtils_UnAuthenticated_8_0(
+    TestFacebookUtils_UnAuthenticated, unittest.TestCase
+):
+    fb_api_version = "8.0"
 
 
 # ==============================================================================

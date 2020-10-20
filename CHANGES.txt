@@ -1,9 +1,11 @@
-0.50.6rc (unreleased)
+0.60.0dev0 (unreleased)
 ------------------
 - black formatting
 - inline doc addition
 - replaced outdated terms with more inclusive language
 - integrated with pre-commit
+- added `.api_versions` file
+- stopped testing against old apis
 
 0.50.5 (2019-04-26)
 ------------------
