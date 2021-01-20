@@ -3,21 +3,18 @@ import re
 from setuptools import setup
 from setuptools import find_packages
 
+HERE = os.path.abspath(os.path.dirname(__file__))
+
 # store version in the init.py
-with open(
-    os.path.join(os.path.dirname(__file__), "facebook_utils", "__init__.py")
-) as v_file:
+with open(os.path.join(HERE, "facebook_utils", "__init__.py")) as v_file:
     VERSION = re.compile(r'.*__VERSION__ = "(.*?)"', re.S).match(v_file.read()).group(1)
 
 
 long_description = (
     description
 ) = "Simple utilites for Facebook integration with your website."
-try:
-    here = os.path.abspath(os.path.dirname(__file__))
-    long_description = open(os.path.join(here, "README.md")).read()
-except:
-    pass
+with open(os.path.join(HERE, "README.md")) as fp:
+    long_description = fp.read()
 
 install_requires = [
     "requests>=1.2",
