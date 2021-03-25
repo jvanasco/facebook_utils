@@ -6,7 +6,7 @@ from setuptools import find_packages
 HERE = os.path.abspath(os.path.dirname(__file__))
 
 # store version in the init.py
-with open(os.path.join(HERE, "facebook_utils", "__init__.py")) as v_file:
+with open(os.path.join(HERE, "src", "facebook_utils", "__init__.py")) as v_file:
     VERSION = re.compile(r'.*__VERSION__ = "(.*?)"', re.S).match(v_file.read()).group(1)
 
 
@@ -36,7 +36,10 @@ setup(
     long_description_content_type="text/markdown",
     license="BSD",
     keywords="facebook",
-    packages=find_packages(),
+    packages=find_packages(
+        where="src",
+    ),
+    package_dir={"": "src"},
     include_package_data=True,
     zip_safe=False,
     install_requires=install_requires,

@@ -1,9 +1,12 @@
 import datetime
 
+# last checked 2021/03/25
 # https://developers.facebook.com/docs/graph-api/changelog/versions
 # Version:	Release Date, Expiration Date
 _API_VERSIONS = {
-    "8.0": ["Aug 4, 2020", None],
+    "10.0": ["Feb 23, 2021", None],
+    "9.0": ["Nov 10, 2020", "Feb 23, 2023"],
+    "8.0": ["Aug 4, 2020", "Nov 1, 2022"],
     "7.0": ["May 5, 2020", "Aug 4, 2022"],
     "6.0": ["Feb 3, 2020", "May 5, 2022"],
     "5.0": ["Oct 29, 2019", "Feb 3, 2022"],
