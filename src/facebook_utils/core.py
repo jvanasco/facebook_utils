@@ -1,44 +1,34 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-from functools import wraps
+
 import base64
 import cgi
 import hashlib
 import hmac
-import os
-import re
+import logging
 import requests
-import time
-import warnings
 
+try:
+    import simplejson as json
+except ImportError:
+    import json
+import time
+from functools import wraps
+
+# pypi
 import six
 from six.moves.urllib.parse import urlencode
 from six.moves.urllib.parse import urlparse
 from six.moves.urllib.parse import parse_qs
 from six import text_type
 
-try:
-    import simplejson as json
-except ImportError:
-    import json
 
-re_api_version_fixable = re.compile("\d\.\d+")
-re_api_version_valid = re.compile("v\d\.\d+")
-
-import logging
-
-log = logging.getLogger(__name__)
-
-
-def warn_future(message):
-    warnings.warn(message, FutureWarning, stacklevel=2)
-
-
-# ==============================================================================
-
-from .facebook_api_urls import FacebookApiUrls, FB_URL_GRAPH_API, FB_URL_WEB
-from .facebook_exceptions import reformat_error
-from .facebook_exceptions import (
+# local
+from .api_urls import FacebookApiUrls
+from .api_urls import FB_URL_GRAPH_API
+from .api_urls import FB_URL_WEB
+from .exceptions import reformat_error
+from .exceptions import (
     ApiError,
     ApiAuthError,
     ApiAuthExpiredError,
@@ -52,12 +42,24 @@ from .facebook_exceptions import (
     ApiUnhandledError,
     AuthenticatedHubRequired,
 )
+from .utils import parse_environ
+from .utils import RE_api_version_fixable
+from .utils import RE_api_version_valid
+from .utils import warn_future
+
 
 # ==============================================================================
 
 
-DEBUG = os.environ.get("FBUTILS_DEBUG", False)
-FB_API_VERSION = os.environ.get("FBUTILS_FB_API_VERSION", None)
+log = logging.getLogger(__name__)
+
+# PORT
+_fbutils_env = parse_environ()
+DEBUG = _fbutils_env["debug"]
+FB_API_VERSION = _fbutils_env["fb_api_version"]
+
+
+# ------------------------------------------------------------------------------
 
 
 def require_authenticated_hub(f):
@@ -132,11 +134,11 @@ class FacebookHub(object):
         # this seems assbackwards, but we want to store a numeric version of the facebook api version
         _fb_api_version = fb_api_version or FB_API_VERSION
         if _fb_api_version:
-            if re_api_version_valid.match(_fb_api_version):
+            if RE_api_version_valid.match(_fb_api_version):
                 # ignore the initial v
                 _fb_api_version = _fb_api_version[1:]
             else:
-                if not re_api_version_fixable.match(_fb_api_version):
+                if not RE_api_version_fixable.match(_fb_api_version):
                     raise ValueError("Invalid API version")
         self.fb_api_version = float(_fb_api_version) if _fb_api_version else None
 

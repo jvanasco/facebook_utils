@@ -1,5 +1,11 @@
+# stdlib
 import datetime
+
+# pypi
 from six import text_type
+
+
+# ==============================================================================
 
 
 class ApiError(Exception):

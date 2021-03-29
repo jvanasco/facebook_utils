@@ -7,4 +7,3 @@ ToDo
 
 [ ] better catch the API errors and handle ratelimits, such as raising a `ApiRatelimitedError`
 [ ] better tool on generating needed vars for the test 
-[ ] strip out hashbang '#' on interactive tool

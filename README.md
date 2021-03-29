@@ -24,10 +24,11 @@ Usage
 =====
 
 
-All work is done via the `facebook_utils.FacebookHub()` object.
+All work is done via the `facebook_utils.core.FacebookHub()` object.
 
 Configure a hub with something like the following:
 
+	from facebook_utils import FacebookHub
     hub = FacebookHub(app_id = x,
                       app_secret = y,
                       app_secretproof = True
@@ -52,7 +53,8 @@ is not explicitly provided. It will be based on the `access_token` appearing as
 * an `access_token` in the querystring of a retrieved url
 * an `access_token` in the POST payload
 
-This will allow you to follow paginated links from the API as-is, upgrading as needed
+This will allow you to follow paginated links from the API as-is, upgrading as
+needed.
 
 
 IMPORTANT NOTES
@@ -63,7 +65,9 @@ Facebook's API Support is inconsistent with the terminology:
 * The API endpoints expect `client_id` and `client_secret`
 * The Developer Tools provide `app id` and `app secret`
 
-For the sake of clarity, this library uses the terms `app_id` and `app_secret` because they are what Facebook's developer dashboard provides. They are translated into the API Endpoint terms as required.
+For the sake of clarity, this library uses the terms `app_id` and `app_secret`
+because they are what Facebook's developer dashboard provides. They are translated
+into the API Endpoint terms as required.
 
 By default the API calls will be unversioned. You should specify the API version.
 
@@ -76,7 +80,7 @@ Flow 1 - Server Side
 1. configure an object with `oauth_code_redirect_uri`
 2. consumers click a button on your site, which redirects to
 `oauth_code_redirect_uri` -- as provided by `oauth_code__url_dialog()`
-3. upon success, users are redirected from facebook to
+3. upon success, users are redirected from Facebook to
 `oauth_code_redirect_uri` along with a query param titled `code`
 4. you may then call `.oauth_code__get_access_token()` to get an access
 token or call `oauth_code__get_access_token_and_profile()` to get the token
@@ -89,7 +93,7 @@ Flow 2 - Client Side
 1. configure an object with `oauth_token_redirect_uri`
 2. consumers click a button on your site, which redirects to
 `oauth_token_redirect_uri` -- as provided by `oauth_token__url_dialog()`
-3. upon success, users are redirected from facebook to
+3. upon success, users are redirected from Facebook to
 `oauth_token__url_dialog` along with a query param titled `token` and a
 hash value titled `#access_token`. The `access_token` is not visible to
 the server, and must be transferred to your server via JavaScript or
@@ -130,7 +134,7 @@ A convenience method will check for the `X-Page-Usage` ratelimiting header:
 
 If no ratelimiting is set, it will return None.
 
-If facebook has set ratelimiting, it will convert the JSON-formatted string in
+If Facebook has set ratelimiting, it will convert the JSON-formatted string in
 the header into a python dict:
 
     print hub.last_response_ratelimited()
@@ -140,7 +144,6 @@ the header into a python dict:
        }
 
 
-
 Some Notes
 ==========
 
@@ -148,8 +151,8 @@ Most methods will let you override the 'scope' and 'request_uri'.
 This shouldn't really be necessary and will probably be deprecated.
 
 Some methods support multiple ways of parsing results.
-Until recently, Facebook's API returned values either as url-encoded strings or as JSON.
-Now most results are in JSON.
+Until recently, Facebook's API returned values either as url-encoded strings or
+as JSON. Now most results are in JSON.
 
 
 Pyramid Examples
@@ -259,13 +262,14 @@ The current exception class inheritance is:
     AuthenticatedHubRequired
 
 `ApiError` instances contain:
-    code (facebook specific, not http code)
-    type (as dictacted by facebook)
-    message (possibly dictated by facebook)
+    code (Facebook specific, not http code)
+    type (as dictacted by Facebook)
+    message (possibly dictated by Facebook)
     raised (the trapped error that raised this, if available)
     response (the repsonse in error, if available)
 
-`AuthenticatedHubRequired` will be raised if a non-authenticated hub tries to perform authenticated actions
+`AuthenticatedHubRequired` will be raised if a non-authenticated hub tries to
+perform authenticated actions
 
 The `api_proxy` will catch *most* errors. Since this is in development,
 i'm raising uncaught exceptions. There will be a future "ApiUnhandledError"
@@ -274,6 +278,47 @@ i'm raising uncaught exceptions. There will be a future "ApiUnhandledError"
 Testing
 ===========
 
+
+Trial Run
+----------
+
+1. Set up an App on https://developers.facebook.com
+
+2. You need this information exported in your environment
+
+	FBUTILS_APP_ID : The numeric ID for the app
+	FBUTILS_APP_SECRET : You generate this on the Facebook Settings
+	FBUTILS_APP_SECRETPROOF=1 : 
+	FBUTILS_APP_DOMAIN : the app's domain. example: dev.example.com
+	FBUTILS_APP_SCOPE : The scope. can just be "email"
+	FBUTILS_REDIRECT_URI_OAUTHCODE : the uri to redirect visitors to.
+		this MUST be whitelisted on Facebook's OAuth/Login settings
+
+3. Run 
+
+	python test-interactive.py
+	
+You will see a message like:
+
+    Visit the following url to approve.  You will be redirected back to the `FBUTILS_REDIRECT_URI_OAUTHCODE` URI
+https://www.facebook.com/dialog/oauth?client_id={XXXXX}&scope={XXXXX}&redirect_uri={XXXXX}
+
+Copy/paste that url into a browser window
+
+You will be redirected to a url like:
+
+	{{https://dev.cliqued.in/account/login/facebook-oauth?response_type=code}}&code={{CODE}}#_=_
+
+Copy the entire `CODE` from the URL and paste it in.  It is okay to leave the
+trailing `#_=_` fragment
+
+This will step you through multiple API calls, asking you to visit the
+authorization URL each time.  
+
+You should notice the authorization code changes each time, however the Facebook
+API token which is returned will remain the same.
+
+
 Unit Tests
 ----------
 
@@ -281,21 +326,25 @@ Unit Tests require the following environment vars to be set:
 
     FBUTILS_APP_ID
     FBUTILS_APP_SECRET
+    FBUTILS_APP_SECRETPROOF
     FBUTILS_APP_SCOPE
     FBUTILS_ACCESS_TOKEN
     FBUTILS_APP_DOMAIN
-    FBUTILS_APP_SECRETPROOF
 
 it should be simple...
 
     export FBUTILS_APP_ID="app_id_from_facebook.com"
     export FBUTILS_APP_SECRET="app_secret_from_facebook.com"
-    export FBUTILS_APP_SCOPE="email,user_activities,user_status,user_posts"
-
-    export FBUTILS_APP_DOMAIN='allowlisted domain'
-    export FBUTILS_ACCESS_TOKEN="from_API_operations, or generate via developer interface"
     export FBUTILS_APP_SECRETPROOF=set if you locked this down on facebook
+    export FBUTILS_APP_SCOPE="email,user_activities,user_status,user_posts"
+    export FBUTILS_APP_DOMAIN='allowlisted domain'
     export FBUTILS_REDIRECT_URI_OAUTHCODE= configured on the facebook dashboard
+    export FBUTILS_ACCESS_TOKEN="from_API_operations, or generate via developer interface"
+
+
+To generate a `FBUTILS_ACCESS_TOKEN` value, you can use the `tests/generate_credentials.py`
+script.
+
 
 
 Integrated Tests
@@ -305,8 +354,9 @@ There is also a `test_interactive.py` file that uses the same environment vars
 
     python test_interactive.py
 
-That will allow you to step through a few scenarios and set up an integration with facebook itself.
+That will allow you to step through a few scenarios and set up an integration
+with Facebook itself.
 
 
-:copyright: 2012-2019 by Jonathan Vanasco
+:copyright: 2012-2021 by Jonathan Vanasco
 license: BSD

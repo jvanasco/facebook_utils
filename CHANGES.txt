@@ -7,6 +7,11 @@
 - added `.api_versions` file
 - stopped testing against old apis
 - packaging layout
+- reorganized source files; removed `facebook_` prefix to filenames
+- new `.utils` namespace;
+- * migrated some functions into it
+- * added a dedicated parser for environment variables; designed to streamline testing
+
 
 0.50.5 (2019-04-26)
 ------------------

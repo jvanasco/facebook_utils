@@ -1,3 +1,4 @@
+# stdlib
 import datetime
 import os
 import pdb
@@ -11,18 +12,19 @@ except:
 
 # local
 import facebook_utils as fb
-from facebook_utils.facebook_exceptions import ApiRatelimitedError
 from facebook_utils.api_versions import API_VERSIONS
+from facebook_utils.exceptions import ApiRatelimitedError
+from facebook_utils.utils import parse_environ
 
 
 # ==============================================================================
 
 
-APP_RATELIMITED = False
 TODAY = datetime.datetime.today()
+APP_RATELIMITED = False
 
 
-# ==============================================================================
+# ------------------------------------------------------------------------------
 
 
 class _TestVersionedAPI(object):
@@ -47,7 +49,7 @@ class _TestVersionedAPI(object):
 
 
 class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
-    FBUTILS_ACCESS_TOKEN = None
+    FB_UTILS_ENV = None
     expect_email_in_profile = False
 
     def _newHub(self):
@@ -55,43 +57,34 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
         We need the following env variables set:
             FBUTILS_APP_ID
             FBUTILS_APP_SECRET
-            FBUTILS_APP_SCOPE
+            FBUTILS_APP_SECRETPROOF
+
             FBUTILS_APP_DOMAIN
             FBUTILS_ACCESS_TOKEN*
-
-        This might need to be set:
-            FBUTILS_APP_SECRETPROOF
 
         Note:
             *FBUTILS_ACCESS_TOKEN can be a user access token (vs an app or page token)
             we just need the ability to test some actions that require an access token.
         """
-        env = os.environ
-        if "FBUTILS_APP_ID" not in os.environ:
-            raise ValueError("Test must have FBUTILS_APP_ID")
-        self.FBUTILS_APP_ID = os.environ["FBUTILS_APP_ID"]
-        if "FBUTILS_APP_SECRET" not in os.environ:
-            raise ValueError("Test must have FBUTILS_APP_SECRET")
-        self.FBUTILS_APP_SECRET = os.environ["FBUTILS_APP_SECRET"]
-        if "FBUTILS_APP_SCOPE" not in os.environ:
-            raise ValueError("Test must have FBUTILS_APP_SCOPE")
-        self.FBUTILS_APP_SCOPE = os.environ["FBUTILS_APP_SCOPE"]
-        if "FBUTILS_ACCESS_TOKEN" not in os.environ:
-            raise ValueError("Test must have FBUTILS_ACCESS_TOKEN")
-        self.FBUTILS_ACCESS_TOKEN = os.environ["FBUTILS_ACCESS_TOKEN"]
-        if "FBUTILS_APP_DOMAIN" not in os.environ:
-            raise ValueError("Test must have FBUTILS_APP_DOMAIN")
-        self.FBUTILS_APP_DOMAIN = os.environ["FBUTILS_APP_DOMAIN"]
-        self.FBUTILS_APP_SECRETPROOF = os.environ.get("FBUTILS_APP_SECRETPROOF", None)
+        _REQUIRED_ENV = [
+            "FBUTILS_APP_ID",
+            "FBUTILS_APP_SECRET",
+            "FBUTILS_APP_SECRETPROOF",
+            "FBUTILS_ACCESS_TOKEN",
+            "FBUTILS_APP_DOMAIN",
+        ]
+        self.FB_UTILS_ENV = parse_environ(requires=_REQUIRED_ENV)
 
         hub = fb.FacebookHub(
-            app_id=self.FBUTILS_APP_ID,
-            app_secret=self.FBUTILS_APP_SECRET,
-            app_secretproof=self.FBUTILS_APP_SECRETPROOF,
+            app_id=self.FB_UTILS_ENV["app_id"],
+            app_secret=self.FB_UTILS_ENV["app_secret"],
+            app_secretproof=self.FB_UTILS_ENV["app_secretproof"],
             app_scope="email",
-            app_domain=self.FBUTILS_APP_DOMAIN,
-            oauth_code_redirect_uri="https://%s/oauth-code" % self.FBUTILS_APP_DOMAIN,
-            oauth_token_redirect_uri="https://%s/oauth-token" % self.FBUTILS_APP_DOMAIN,
+            app_domain=self.FB_UTILS_ENV["app_domain"],
+            oauth_code_redirect_uri="https://%s/oauth-code"
+            % self.FB_UTILS_ENV["app_domain"],
+            oauth_token_redirect_uri="https://%s/oauth-token"
+            % self.FB_UTILS_ENV["app_domain"],
             fb_api_version=self.fb_api_version,
         )
         return hub
@@ -108,7 +101,7 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
             "%(FB_API_BASE_DIALOG)s/oauth?client_id=%(FBUTILS_APP_ID)s&scope=email&redirect_uri=https%%3A%%2F%%2F%(FBUTILS_APP_DOMAIN)s%%2Foauth-code"
             % {
                 "FBUTILS_APP_ID": hub.app_id,
-                "FBUTILS_APP_DOMAIN": quote_plus(self.FBUTILS_APP_DOMAIN),
+                "FBUTILS_APP_DOMAIN": quote_plus(self.FB_UTILS_ENV["app_domain"]),
                 "FB_API_BASE_DIALOG": fb_api_base_dialog,
             },
         )
@@ -117,7 +110,7 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
         hub = self._newHub()
         url = hub.oauth_code__url_dialog(
             redirect_uri="https://%(FBUTILS_APP_DOMAIN)s/oauth-code-custom"
-            % {"FBUTILS_APP_DOMAIN": quote_plus(self.FBUTILS_APP_DOMAIN)}
+            % {"FBUTILS_APP_DOMAIN": quote_plus(self.FB_UTILS_ENV["app_domain"])}
         )
         fb_api_base_dialog = self._fb_api_base__dialog()
         self.assertEqual(
@@ -125,7 +118,7 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
             "%(FB_API_BASE_DIALOG)s/oauth?client_id=%(FBUTILS_APP_ID)s&scope=email&redirect_uri=https%%3A%%2F%%2F%(FBUTILS_APP_DOMAIN)s%%2Foauth-code-custom"
             % {
                 "FBUTILS_APP_ID": hub.app_id,
-                "FBUTILS_APP_DOMAIN": quote_plus(self.FBUTILS_APP_DOMAIN),
+                "FBUTILS_APP_DOMAIN": quote_plus(self.FB_UTILS_ENV["app_domain"]),
                 "FB_API_BASE_DIALOG": fb_api_base_dialog,
             },
         )
@@ -139,7 +132,7 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
             "%(FB_API_BASE_DIALOG)s/oauth?client_id=%(FBUTILS_APP_ID)s&scope=email,user_birthday&redirect_uri=https%%3A%%2F%%2F%(FBUTILS_APP_DOMAIN)s%%2Foauth-code"
             % {
                 "FBUTILS_APP_ID": hub.app_id,
-                "FBUTILS_APP_DOMAIN": quote_plus(self.FBUTILS_APP_DOMAIN),
+                "FBUTILS_APP_DOMAIN": quote_plus(self.FB_UTILS_ENV["app_domain"]),
                 "FB_API_BASE_DIALOG": fb_api_base_dialog,
             },
         )
@@ -162,7 +155,7 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
         # python -munittest tests.TestFacebookUtils_Authenticated.test_access_token_exchange_manual
         hub = self._newHub()
         url_exchange = hub.oauth__url_extend_access_token(
-            access_token=self.FBUTILS_ACCESS_TOKEN
+            access_token=self.FB_UTILS_ENV["access_token"]
         )
         fb_data = hub.api_proxy(url=url_exchange, expected_format="json.load")
         access_token = fb_data["access_token"]
@@ -171,14 +164,14 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
     def test_access_token_exchange_graph(self):
         hub = self._newHub()
         response = hub.graph__extend_access_token(
-            access_token=self.FBUTILS_ACCESS_TOKEN
+            access_token=self.FB_UTILS_ENV["access_token"]
         )
         self.assertTrue(response["access_token"])
 
     def test_graph_me(self):
         hub = self._newHub()
         url_me = hub.graph__url_me_for_access_token(
-            access_token=self.FBUTILS_ACCESS_TOKEN
+            access_token=self.FB_UTILS_ENV["access_token"]
         )
         fb_data = hub.api_proxy(url=url_me, expected_format="json.load")
         self.assertTrue(fb_data)
@@ -186,7 +179,7 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
     def test_graph__get_profile_for_access_token(self):
         hub = self._newHub()
         fb_data = hub.graph__get_profile_for_access_token(
-            access_token=self.FBUTILS_ACCESS_TOKEN
+            access_token=self.FB_UTILS_ENV["access_token"]
         )
         self.assertTrue(fb_data)
         if self.expect_email_in_profile:
@@ -196,7 +189,7 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
         else:
             self.assertNotIn("email", fb_data)
             fb_data2 = hub.graph__get_profile_for_access_token(
-                access_token=self.FBUTILS_ACCESS_TOKEN, fields="email,name"
+                access_token=self.FB_UTILS_ENV["access_token"], fields="email,name"
             )
             self.assertTrue(fb_data2)
             self.assertIn("email", fb_data2)
@@ -210,7 +203,7 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
         fb_data = hub.api_proxy(
             url="""https://graph.facebook.com/me/feed?fields=%s""" % FB_FIELDS,
             expected_format="json.load",
-            access_token=self.FBUTILS_ACCESS_TOKEN,
+            access_token=self.FB_UTILS_ENV["access_token"],
         )
         self.assertTrue(fb_data)
         # TODO - test to see we have these fields!
@@ -221,7 +214,7 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
         FB_LIMIT_HOME = 1
         FB_FIELDS = "id,from,message,comments,created_time,link,caption,description"
         fb_post_data = {
-            "access_token": self.FBUTILS_ACCESS_TOKEN,
+            "access_token": self.FB_UTILS_ENV["access_token"],
             "batch": [
                 {"method": "GET", "relative_url": "/me/permissions"},
                 {
@@ -248,7 +241,7 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
             )
         )
         fb_post_data = {
-            "access_token": self.FBUTILS_ACCESS_TOKEN,
+            "access_token": self.FB_UTILS_ENV["access_token"],
             "batch": [
                 {"method": "GET", "relative_url": "/me/permissions"},
                 {
@@ -266,12 +259,11 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
     def test_graph__url__upgrades(self):
         hub = self._newHub()
         fb_data = hub.api_proxy(
-            url="/me/permissions", access_token=self.FBUTILS_ACCESS_TOKEN
+            url="/me/permissions", access_token=self.FB_UTILS_ENV["access_token"]
         )
         # the payload is something like
         #    {u'data': [{u'permission': u'user_posts', u'status': u'granted'},
         #               {u'permission': u'email', u'status': u'granted'},
-        #               {u'permission': u'publish_actions', u'status': u'granted'},
         #               {u'permission': u'public_profile', u'status': u'granted'}
         #               ]
         #     }
@@ -296,9 +288,10 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
             fb_data = hub.api_proxy(
                 expected_format="json.load",
                 get_data=get_data,
-                access_token=self.FBUTILS_ACCESS_TOKEN,
+                access_token=self.FB_UTILS_ENV["access_token"],
             )
         except ApiRatelimitedError:
+            print("ApiRatelimitedError")
             APP_RATELIMITED = True
             raise
         self.assertIn("og_object", fb_data[url])
@@ -334,9 +327,10 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
         hub = self._newHub()
         try:
             fb_data = hub.graph__get_profile_for_access_token(
-                access_token=self.FBUTILS_ACCESS_TOKEN
+                access_token=self.FB_UTILS_ENV["access_token"]
             )
         except ApiRatelimitedError:
+            print("ApiRatelimitedError")
             APP_RATELIMITED = True
             raise
         self.assertTrue(fb_data)
@@ -346,13 +340,13 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
         # this is one method of getting permissions
         url = "/%s/permissions" % user_id
         fb_data__permissions = hub.api_proxy(
-            url, access_token=self.FBUTILS_ACCESS_TOKEN
+            url, access_token=self.FB_UTILS_ENV["access_token"]
         )
         _validate_payload(fb_data__permissions)
 
         # this is another method...
         fb_data__permissions_alt = hub.graph__get_profile_for_access_token(
-            access_token=self.FBUTILS_ACCESS_TOKEN,
+            access_token=self.FB_UTILS_ENV["access_token"],
             user=user_id,
             action="permissions",
             # fields = 'id,name,email',  # don't pass the profile elements in to the action. otherwise it blanks
@@ -539,6 +533,18 @@ class TestFacebookUtils_Authenticated_8_0(
     fb_api_version = "8.0"
 
 
+class TestFacebookUtils_Authenticated_9_0(
+    TestFacebookUtils_Authenticated_Core, unittest.TestCase
+):
+    fb_api_version = "9.0"
+
+
+class TestFacebookUtils_Authenticated_10_0(
+    TestFacebookUtils_Authenticated_Core, unittest.TestCase
+):
+    fb_api_version = "10.0"
+
+
 # test Unaauthenticated
 
 
@@ -636,6 +642,18 @@ class TestFacebookUtils_UnAuthenticated_8_0(
     TestFacebookUtils_UnAuthenticated, unittest.TestCase
 ):
     fb_api_version = "8.0"
+
+
+class TestFacebookUtils_UnAuthenticated_9_0(
+    TestFacebookUtils_UnAuthenticated, unittest.TestCase
+):
+    fb_api_version = "9.0"
+
+
+class TestFacebookUtils_UnAuthenticated_10_0(
+    TestFacebookUtils_UnAuthenticated, unittest.TestCase
+):
+    fb_api_version = "10.0"
 
 
 # ==============================================================================

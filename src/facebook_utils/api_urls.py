@@ -10,7 +10,7 @@ from six.moves.urllib.parse import quote_plus
 FB_URL_GRAPH_API = "https://graph.facebook.com"
 FB_URL_WEB = "https://www.facebook.com"
 
-# ==============================================================================
+# ------------------------------------------------------------------------------
 
 URL_OAUTH_DIALOG_CODE = u"{fb_url_web}/dialog/oauth?client_id={app_id}&scope={scope}&redirect_uri={redirect_uri}{auth_type}"
 URL_OAUTH_DIALOG_TOKEN = u"{fb_url_web}/dialog/oauth?client_id={app_id}&scope={scope}&redirect_uri={redirect_uri}&response_type=token"
@@ -31,7 +31,7 @@ URL_GRAPH_ACTION_CREATE = (
 )
 URL_GRAPH_ACTION_DELETE = u"{fb_url_graph_api}/{action_id}"
 
-# ==============================================================================
+# ------------------------------------------------------------------------------
 
 
 def extend__appsecret_proof(url, appsecret_proof=None):
