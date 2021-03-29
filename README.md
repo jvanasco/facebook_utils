@@ -1,11 +1,13 @@
 facebook_utils
 ==============
 
-A collection of utilities for integrating user accounts with Facebook.com.
+A collection of utilities for integrating User Accounts with Facebook.com.
 
-Right now this handles oAuth login and Graph API operations
+Right now this library is focused on oAuth Login and Graph API operations
 
-This has been a general-purpose Python client for several years. It works well.
+This library has been a general-purpose Python client, operating in production
+for many years.  The functionality may be limited, but it works well and ships
+with a detailed test suite.
 
 Purpose
 =======
@@ -35,12 +37,11 @@ Configure a hub with something like the following:
 
 Or make it unuthenticated. It's up to you.
 
-
 This was originally built/intended for use under the Pyramid environment.
 
-calling `FacebookPyramid()` will create a new object that subclasses
+Calling `FacebookPyramid()` will create a new object that subclasses
 `FacebookHub()` objects, using  default settings from your .ini and
-pulling variables from 'request' as needed.
+pulling variables from `request` as needed.
 
 As of v0.5.0 it supports the `appsecret_proof` lockdown on the client level.
 
@@ -146,7 +147,7 @@ the header into a python dict:
 Some Notes
 ==========
 
-Most methods will let you override the 'scope' and 'request_uri'.
+Most methods will let you override the `scope` and `request_uri`.
 This shouldn't really be necessary and will probably be deprecated.
 
 Some methods support multiple ways of parsing results.
@@ -183,10 +184,10 @@ or:
     facebook.app.oauth_token_redirect_uri= http://127.0.0.1:5010/account/facebook-authenticate-oauth-token?response_type=token
 
 
-
 Make sure your endpoints are allowlisted on the Facebook console
 
-integrate into your handlers:
+
+Integrate into your views:
 
     from facebook_utils import FacebookPyramid
 
@@ -222,7 +223,7 @@ integrate into your handlers:
             return {"project":"MyApp"}
 
 
-integrate into your template:
+Integrate into your template:
 
     <a class="fancy_button-1" id="signup-start_btn-facebook" href="${facebook_pyramid.oauth_code__url_dialog()}">
         Connect with <strong>Facebook</strong>
@@ -239,7 +240,7 @@ return json data, others return urlquoted data. `api_proxy` doesn't care.
 it returns a dict from every endpoint, and does the conversion for you.
 
 The `api_proxy` defaults to a json load. certain api calls will pass in
-a different `expected_format` argument. The proxy will also handle 'batch'
+a different `expected_format` argument. The proxy will also handle "batch"
 style graph requests.
 
 When the api_proxy encounters an error, it returns `ApiError` or a more
@@ -270,8 +271,8 @@ The current exception class inheritance is:
 `AuthenticatedHubRequired` will be raised if a non-authenticated hub tries to
 perform authenticated actions
 
-The `api_proxy` will catch *most* errors. Since this is in development,
-i'm raising uncaught exceptions. There will be a future "ApiUnhandledError"
+The `api_proxy` will catch *most* errors. Since the Facebook API is in constant
+flux, uncaught exceptions are raised. There will be a future "ApiUnhandledError".
 
 
 Testing
@@ -288,7 +289,7 @@ Trial Run
 	FBUTILS_APP_ID : The numeric ID for the app
 	FBUTILS_APP_SECRET : You generate this on the Facebook Settings
 	FBUTILS_APP_SECRETPROOF=1 : 
-	FBUTILS_APP_DOMAIN : the app's domain. example: dev.example.com
+	FBUTILS_APP_DOMAIN : the App's domain. example: dev.example.com
 	FBUTILS_APP_SCOPE : The scope. can just be "email"
 	FBUTILS_REDIRECT_URI_OAUTHCODE : the uri to redirect visitors to.
 		this MUST be whitelisted on Facebook's OAuth/Login settings
