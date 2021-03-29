@@ -3,6 +3,7 @@ import datetime
 import os
 import pdb
 import pprint
+import time
 import unittest
 
 try:
@@ -22,6 +23,7 @@ from facebook_utils.utils import parse_environ
 
 TODAY = datetime.datetime.today()
 APP_RATELIMITED = False
+GO_SLOWLY = True
 
 
 # ------------------------------------------------------------------------------
@@ -158,6 +160,8 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
             access_token=self.FB_UTILS_ENV["access_token"]
         )
         fb_data = hub.api_proxy(url=url_exchange, expected_format="json.load")
+        if GO_SLOWLY:
+            time.sleep(1)
         access_token = fb_data["access_token"]
         self.assertTrue(access_token)
 
@@ -166,6 +170,8 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
         response = hub.graph__extend_access_token(
             access_token=self.FB_UTILS_ENV["access_token"]
         )
+        if GO_SLOWLY:
+            time.sleep(1)
         self.assertTrue(response["access_token"])
 
     def test_graph_me(self):
@@ -174,6 +180,8 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
             access_token=self.FB_UTILS_ENV["access_token"]
         )
         fb_data = hub.api_proxy(url=url_me, expected_format="json.load")
+        if GO_SLOWLY:
+            time.sleep(1)
         self.assertTrue(fb_data)
 
     def test_graph__get_profile_for_access_token(self):
@@ -181,6 +189,8 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
         fb_data = hub.graph__get_profile_for_access_token(
             access_token=self.FB_UTILS_ENV["access_token"]
         )
+        if GO_SLOWLY:
+            time.sleep(1)
         self.assertTrue(fb_data)
         if self.expect_email_in_profile:
             self.assertIn("email", fb_data)
@@ -191,6 +201,8 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
             fb_data2 = hub.graph__get_profile_for_access_token(
                 access_token=self.FB_UTILS_ENV["access_token"], fields="email,name"
             )
+            if GO_SLOWLY:
+                time.sleep(1)
             self.assertTrue(fb_data2)
             self.assertIn("email", fb_data2)
             self.assertIn("id", fb_data2)
@@ -205,6 +217,8 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
             expected_format="json.load",
             access_token=self.FB_UTILS_ENV["access_token"],
         )
+        if GO_SLOWLY:
+            time.sleep(1)
         self.assertTrue(fb_data)
         # TODO - test to see we have these fields!
 
@@ -225,6 +239,8 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
             ],
         }
         fb_data = hub.api_proxy(expected_format="json.load", post_data=fb_post_data)
+        if GO_SLOWLY:
+            time.sleep(1)
         self.assertTrue(fb_data)
         # TODO - test to see we have the fields present
 
@@ -252,6 +268,8 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
             ],
         }
         fb_data = hub.api_proxy(expected_format="json.load", post_data=fb_post_data)
+        if GO_SLOWLY:
+            time.sleep(1)
         self.assertTrue(fb_data)
         # TODO - test to see we have the batch fields present
 
@@ -261,6 +279,8 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
         fb_data = hub.api_proxy(
             url="/me/permissions", access_token=self.FB_UTILS_ENV["access_token"]
         )
+        if GO_SLOWLY:
+            time.sleep(1)
         # the payload is something like
         #    {u'data': [{u'permission': u'user_posts', u'status': u'granted'},
         #               {u'permission': u'email', u'status': u'granted'},
@@ -290,6 +310,8 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
                 get_data=get_data,
                 access_token=self.FB_UTILS_ENV["access_token"],
             )
+            if GO_SLOWLY:
+                time.sleep(1)
         except ApiRatelimitedError:
             print("ApiRatelimitedError")
             APP_RATELIMITED = True
@@ -311,7 +333,11 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
             fb_data = hub.api_proxy(url="wtf")
 
         self.assertRaises(fb.ApiError, lambda: _bad_url_insecure())
+        if GO_SLOWLY:
+            time.sleep(1)
         self.assertRaises(fb.ApiError, lambda: _bad_url_wtf())
+        if GO_SLOWLY:
+            time.sleep(1)
 
     @unittest.skipIf(APP_RATELIMITED, "APP_RATELIMITED")
     def test_permissions_access(self):
@@ -329,6 +355,8 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
             fb_data = hub.graph__get_profile_for_access_token(
                 access_token=self.FB_UTILS_ENV["access_token"]
             )
+            if GO_SLOWLY:
+                time.sleep(1)
         except ApiRatelimitedError:
             print("ApiRatelimitedError")
             APP_RATELIMITED = True
@@ -342,6 +370,8 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
         fb_data__permissions = hub.api_proxy(
             url, access_token=self.FB_UTILS_ENV["access_token"]
         )
+        if GO_SLOWLY:
+            time.sleep(1)
         _validate_payload(fb_data__permissions)
 
         # this is another method...
@@ -351,6 +381,8 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
             action="permissions",
             # fields = 'id,name,email',  # don't pass the profile elements in to the action. otherwise it blanks
         )
+        if GO_SLOWLY:
+            time.sleep(1)
         _validate_payload(fb_data__permissions)
 
     def test_feed_elements(self):
@@ -378,6 +410,8 @@ class TestFacebookUtils_UnAuthenticated(_TestVersionedAPI):
             expected_format="json.load",
             get_data=get_data,
         )
+        if GO_SLOWLY:
+            time.sleep(1)
         self.assertIn(url, fb_data)
         self.assertIn("og_object", fb_data[url])
         self.assertIn("id", fb_data[url]["og_object"])
@@ -425,6 +459,8 @@ class TestFacebookUtils_UnAuthenticated(_TestVersionedAPI):
             expected_format="json.load",
             get_data=get_data,
         )
+        if GO_SLOWLY:
+            time.sleep(1)
         for url in urls.keys():
             self.assertIn(url, fb_data)
             self.assertIn("og_object", fb_data[url])

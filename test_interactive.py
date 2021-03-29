@@ -10,7 +10,7 @@ This tests requires AT LEAST the following set
     export FBUTILS_APP_SECRETPROOF=1
     export FBUTILS_APP_SCOPE=email
     export FBUTILS_APP_DOMAIN=xxxxxxxxxx
-    export FBUTILS_REDIRECT_URI_OAUTHCODE=https://myapp.example.com/oauth?response_type=code'
+    export FBUTILS_REDIRECT_URI_OAUTH_CODE=https://myapp.example.com/oauth?response_type=code'
 
 """
 
@@ -37,7 +37,7 @@ REQUIRED_ENV = [
     "FBUTILS_APP_SECRETPROOF",
     "FBUTILS_APP_DOMAIN",
     "FBUTILS_APP_SCOPE",
-    "FBUTILS_REDIRECT_URI_OAUTHCODE",
+    "FBUTILS_REDIRECT_URI_OAUTH_CODE",
 ]
 FB_UTILS_ENV = parse_environ(requires=REQUIRED_ENV)
 
@@ -58,7 +58,7 @@ def new_fb_object():
 
 def _get_code(_hub):
     print(
-        "Visit the following url to approve. You will be redirected back to the `FBUTILS_REDIRECT_URI_OAUTHCODE` URI >>> "
+        "Visit the following url to approve. You will be redirected back to the `FBUTILS_REDIRECT_URI_OAUTH_CODE` URI >>> "
     )
     print(_hub.oauth_code__url_dialog())
     _code = _input("""What is the `code` query param in the url? >>> """)

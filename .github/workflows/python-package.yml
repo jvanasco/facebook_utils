@@ -43,4 +43,12 @@ jobs:
         pip list
     - name: Test with pytest
       run: |
+        export FBUTILS_APP_ID=802035933277071
+        # export FBUTILS_APP_SECRET={GITHUB_SECRETS}
+        export FBUTILS_APP_SECRETPROOF=1
+        export FBUTILS_APP_SCOPE=email
+        export FBUTILS_APP_DOMAIN=dev.aptise.com
+        export FBUTILS_REDIRECT_URI_OAUTH_CODE=https://dev.aptise.com/python-sdk-utils/oauth-code
+        export FBUTILS_REDIRECT_URI_OAUTH_TOKEN=https://dev.aptise.com/python-sdk-utils/oauth-token
+        # export FBUTILS_ACCESS_TOKEN={GITHUB_SECRETS}
         tox -e py -- ${{ matrix.pytest-args }}

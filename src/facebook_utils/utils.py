@@ -26,8 +26,8 @@ _CONFIG_MAPPING = {
     "app_secretproof": ("FBUTILS_APP_SECRETPROOF", 0),
     "debug": ("FBUTILS_DEBUG", 0),
     "fb_api_version": ("FBUTILS_FB_API_VERSION", None),
-    "oauth_code_redirect_uri": ("FBUTILS_REDIRECT_URI_OAUTHCODE", None),
-    "oauth_token_redirect_uri": ("FBUTILS_REDIRECT_URI_OAUTHTOKEN", None),
+    "oauth_code_redirect_uri": ("FBUTILS_REDIRECT_URI_OAUTH_CODE", None),
+    "oauth_token_redirect_uri": ("FBUTILS_REDIRECT_URI_OAUTH_TOKEN", None),
     "secure_only": ("FBUTILS_SECURE_ONLY", True),
     "ssl_verify": ("FBUTILS_SSL_VERIFY", True),
 }
