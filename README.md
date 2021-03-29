@@ -345,6 +345,24 @@ it should be simple...
 To generate a `FBUTILS_ACCESS_TOKEN` value, you can use the `tests/generate_credentials.py`
 script.
 
+Github Tests:
+-------------
+
+Managed by Github Secrets
+_________________________
+
+* `FBUTILS_APP_SECRET`
+* `FBUTILS_ACCESS_TOKEN`
+
+Set in `.github/workflows/python-package.yml`
+_____________________________________________
+
+* `FBUTILS_APP_ID`
+* `FBUTILS_APP_SECRETPROOF`
+* `FBUTILS_APP_SCOPE`
+* `FBUTILS_APP_DOMAIN`
+* `FBUTILS_REDIRECT_URI_OAUTH_CODE`
+* `FBUTILS_REDIRECT_URI_OAUTH_TOKEN`
 
 
 Integrated Tests
