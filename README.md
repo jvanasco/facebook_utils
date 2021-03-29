@@ -1,5 +1,5 @@
 facebook_utils
-~~~~~~~~~~~~
+==============
 
 A collection of utilities for integrating user accounts with Facebook.com.
 
@@ -22,7 +22,6 @@ have all your UX customized; if so, this is for you.
 
 Usage
 =====
-
 
 All work is done via the `facebook_utils.core.FacebookHub()` object.
 
@@ -73,7 +72,7 @@ By default the API calls will be unversioned. You should specify the API version
 
 
 Supports Two oAuth Flows
-=========================
+========================
 
 Flow 1 - Server Side
 --------------------
@@ -103,7 +102,7 @@ if you store the access token
 
 
 Unauthenticated Queries
-=========================
+=======================
 
 Queries without authentication required can be performed using the `.api_proxy`
 method.
@@ -120,7 +119,7 @@ response processing.
 
 
 Rate Limiting?
-=========================
+==============
 
 Facebook may ratelimit requests.
 
@@ -276,11 +275,11 @@ i'm raising uncaught exceptions. There will be a future "ApiUnhandledError"
 
 
 Testing
-===========
+=======
 
 
 Trial Run
-----------
+---------
 
 1. Set up an App on https://developers.facebook.com
 
