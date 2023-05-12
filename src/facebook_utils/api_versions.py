@@ -1,5 +1,8 @@
 # stdlib
 import datetime
+from typing import Dict
+from typing import List
+from typing import Optional
 
 
 # ==============================================================================
@@ -8,7 +11,7 @@ import datetime
 # last checked 2021/03/25
 # https://developers.facebook.com/docs/graph-api/changelog/versions
 # Version:	Release Date, Expiration Date
-_API_VERSIONS = {
+_API_VERSIONS: Dict[str, List[Optional[str]]] = {
     "10.0": ["Feb 23, 2021", None],
     "9.0": ["Nov 10, 2020", "Feb 23, 2023"],
     "8.0": ["Aug 4, 2020", "Nov 1, 2022"],
@@ -40,6 +43,6 @@ _format = "%b %d, %Y"
 API_VERSIONS = {}
 for (_v, _ks) in _API_VERSIONS.items():
     API_VERSIONS[_v] = [
-        datetime.datetime.strptime(_ks[0], _format),
+        datetime.datetime.strptime(_ks[0], _format),  # type: ignore[arg-type]
         datetime.datetime.strptime(_ks[1], _format) if _ks[1] else None,
     ]

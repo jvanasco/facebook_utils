@@ -286,13 +286,12 @@ Trial Run
 
 2. You need this information exported in your environment
 
-	FBUTILS_APP_ID : The numeric ID for the app
-	FBUTILS_APP_SECRET : You generate this on the Facebook Settings
-	FBUTILS_APP_SECRETPROOF=1 : 
-	FBUTILS_APP_DOMAIN : the App's domain. example: dev.example.com
-	FBUTILS_APP_SCOPE : The scope. can just be "email"
-	FBUTILS_REDIRECT_URI_OAUTH_CODE : the uri to redirect visitors to.
-		this MUST be whitelisted on Facebook's OAuth/Login settings
+  * `FBUTILS_APP_ID` : The numeric ID for the app
+  * `FBUTILS_APP_SECRET` : You generate this on the Facebook Settings
+  * `FBUTILS_APP_SECRETPROOF` : Enclose a HMAC secret signature?
+  * `FBUTILS_APP_DOMAIN` : the App's domain. example: dev.example.com
+  * `FBUTILS_APP_SCOPE` : The scope. can just be "email"
+  * `FBUTILS_REDIRECT_URI_OAUTH_CODE` : the uri to redirect visitors to. this MUST be whitelisted on Facebook's OAuth/Login settings
 
 3. Run 
 
@@ -300,14 +299,15 @@ Trial Run
 	
 You will see a message like:
 
-    Visit the following url to approve.  You will be redirected back to the `FBUTILS_REDIRECT_URI_OAUTH_CODE` URI
-https://www.facebook.com/dialog/oauth?client_id={XXXXX}&scope={XXXXX}&redirect_uri={XXXXX}
+> Visit the following url to approve.
+> You will be redirected back to the `FBUTILS_REDIRECT_URI_OAUTH_CODE` URI
+> https://www.facebook.com/dialog/oauth?client_id={XXXXX}&scope={XXXXX}&redirect_uri={XXXXX}
 
 Copy/paste that url into a browser window
 
 You will be redirected to a url like:
 
-	{{https://dev.cliqued.in/account/login/facebook-oauth?response_type=code}}&code={{CODE}}#_=_
+> {{https://dev.aptise.com/account/login/facebook-oauth?response_type=code}}&code={{CODE}}#_=_
 
 Copy the entire `CODE` from the URL and paste it in.  It is okay to leave the
 trailing `#_=_` fragment

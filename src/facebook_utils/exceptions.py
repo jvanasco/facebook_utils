@@ -1,9 +1,13 @@
 # stdlib
 import datetime
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import TYPE_CHECKING
+from typing import Union
 
-# pypi
-from six import text_type
-
+if TYPE_CHECKING:
+    from requests import Response  # noqa: F401
 
 # ==============================================================================
 
@@ -13,21 +17,28 @@ class ApiError(Exception):
     Base class for handling the Facebook API errors.
     """
 
-    code = None
-    type = None
-    message = None
-    response = None
-    raised = None
+    message: Optional[str] = None
+    code: Optional[int] = None
+    type: Optional[str] = None
+    response_content: Optional[Union[Dict, List]] = None
+    raised: Optional[Exception] = None
 
-    def __init__(self, code=None, type=None, message=None, response=None, raised=None):
+    def __init__(
+        self,
+        message: Optional[str] = None,
+        code: Optional[int] = None,
+        type: Optional[str] = None,
+        response_content: Optional[Union[Dict, List]] = None,
+        raised: Optional[Exception] = None,
+    ):
         self.code = code
         self.type = type
         self.message = message
-        self.response = response
+        self.response_content = response_content
         self.raised = raised
 
-    def __str__(self):
-        return text_type("ApiError: {code} | {type} | {message}").format(
+    def __str__(self) -> str:
+        return str("ApiError: {code} | {type} | {message}").format(
             code=self.code, type=self.type, message=self.message
         )
 
@@ -167,7 +178,7 @@ class ApiUnhandledError(ApiError):
 
     """
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "ApiError: %s " % (self.raised)
 
 
@@ -179,7 +190,10 @@ class AuthenticatedHubRequired(Exception):
     pass
 
 
-def reformat_error(json_string, raised=None):
+def reformat_error(
+    json_string: Dict,
+    raised: Optional[Exception] = None,
+) -> Dict:
 
     rval = {"message": None, "type": None, "code": None, "raised": None}
 
@@ -187,10 +201,10 @@ def reformat_error(json_string, raised=None):
         if k in json_string:
             rval[k] = json_string[k]
     if raised is not None:
-        rval["raised"] = raised
+        rval["raised"] = raised  # type: ignore[assignment]
     return rval
 
 
-def facebook_time(fb_time):
+def facebook_time(fb_time: str) -> datetime.datetime:
     """parses Facebook's timestamp into a datetime object"""
     return datetime.datetime.strptime(fb_time, "%Y-%m-%dT%H:%M:%S+0000")

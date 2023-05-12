@@ -1,3 +1,10 @@
+0.70.0dev0 (unreleased)
+-----------------------
+initial typing support
+drop py2
+remove `cgi.parse_qs` option
+
+
 0.60.0dev0 (unreleased)
 ------------------
 - black formatting

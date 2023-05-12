@@ -18,7 +18,6 @@ with open(os.path.join(HERE, "README.md")) as fp:
 
 install_requires = [
     "requests>=1.2",
-    "six",
 ]
 tests_require = [
     "pytest",
@@ -40,6 +39,7 @@ setup(
         where="src",
     ),
     package_dir={"": "src"},
+    package_data={"facebook_utils": ["py.typed"]},
     include_package_data=True,
     zip_safe=False,
     install_requires=install_requires,
@@ -51,8 +51,13 @@ setup(
     classifiers=[
         "License :: OSI Approved :: BSD License",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Framework :: Pyramid",
         "Intended Audience :: Developers",
     ],

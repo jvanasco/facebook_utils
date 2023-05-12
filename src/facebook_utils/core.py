@@ -1,47 +1,49 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 
+# stdlib
 import base64
-import cgi
+import binascii
+from functools import wraps
 import hashlib
 import hmac
+import json
 import logging
-import requests
-
-try:
-    import simplejson as json
-except ImportError:
-    import json
 import time
-from functools import wraps
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
+from urllib.parse import parse_qs
+from urllib.parse import urlencode
+from urllib.parse import urlparse
 
 # pypi
-import six
-from six.moves.urllib.parse import urlencode
-from six.moves.urllib.parse import urlparse
-from six.moves.urllib.parse import parse_qs
-from six import text_type
-
+import requests
+from requests import Response
 
 # local
 from .api_urls import FacebookApiUrls
 from .api_urls import FB_URL_GRAPH_API
 from .api_urls import FB_URL_WEB
-from .exceptions import reformat_error
 from .exceptions import (
-    ApiError,
+    ApiApplicationError,
     ApiAuthError,
     ApiAuthExpiredError,
-    ApiApplicationError,
+    ApiError,
     ApiRatelimitedError,
     ApiResponseError,
-    ApiRuntimeVerirficationFormatError,
     ApiRuntimeGrantError,
-    ApiRuntimeScopeError,
     ApiRuntimeGraphMethodError,
+    ApiRuntimeScopeError,
+    ApiRuntimeVerirficationFormatError,
     ApiUnhandledError,
     AuthenticatedHubRequired,
 )
+from .exceptions import reformat_error
 from .utils import parse_environ
 from .utils import RE_api_version_fixable
 from .utils import RE_api_version_valid
@@ -62,7 +64,7 @@ FB_API_VERSION = _fbutils_env["fb_api_version"]
 # ------------------------------------------------------------------------------
 
 
-def require_authenticated_hub(f):
+def require_authenticated_hub(f: Callable):
     """simple decorator for FacebookHub class methods."""
 
     @wraps(f)
@@ -75,43 +77,43 @@ def require_authenticated_hub(f):
 
 
 class FacebookHub(object):
-    app_id = None
-    app_secret = None
-    app_secretproof = None
-    app_scope = None
-    app_domain = None
-    fb_api_version = None
-    oauth_code_redirect_uri = None
-    oauth_token_redirect_uri = None
-    debug_error = False
-    mask_unhandled_exceptions = False
-    ssl_verify = True
-    secure_only = True
-    unauthenticated_hub = False
+    app_id: Optional[str] = None
+    app_secret: Optional[str] = None
+    app_secretproof: Optional[str] = None
+    app_scope: Optional[str] = None
+    app_domain: Optional[str] = None
+    fb_api_version: Optional[float] = None
+    oauth_code_redirect_uri: Optional[str] = None
+    oauth_token_redirect_uri: Optional[str] = None
+    debug_error: bool = False
+    mask_unhandled_exceptions: bool = False
+    ssl_verify: bool = True
+    secure_only: bool = True
+    unauthenticated_hub: bool = False
 
     # these will be urls, preferably versioned
-    fb_url_graph_api = None
-    fb_url_web = None
+    fb_url_graph_api: Optional[str] = None
+    fb_url_web: Optional[str] = None
 
     # stash for debugging
-    _last_response = None
-    _penultimate_response = None
+    _last_response: Optional[Response] = None
+    _penultimate_response: Optional[Response] = None
 
     def __init__(
         self,
-        mask_unhandled_exceptions=False,
-        oauth_token_redirect_uri=None,
-        oauth_code_redirect_uri=None,
-        fb_api_version=None,
-        debug_error=False,
-        app_domain=None,
-        app_secret=None,
-        app_secretproof=None,
-        ssl_verify=True,
-        secure_only=True,
-        app_scope=None,
-        app_id=None,
-        unauthenticated_hub=None,
+        mask_unhandled_exceptions: bool = False,
+        oauth_token_redirect_uri: Optional[str] = None,
+        oauth_code_redirect_uri: Optional[str] = None,
+        fb_api_version: Optional[str] = None,
+        debug_error: bool = False,
+        app_domain: Optional[str] = None,
+        app_secret: Optional[str] = None,
+        app_secretproof: Optional[str] = None,
+        ssl_verify: bool = True,
+        secure_only: bool = True,
+        app_scope: Optional[str] = None,
+        app_id: Optional[str] = None,
+        unauthenticated_hub: Optional[bool] = None,
     ):
         """
         Initialize the ``FacebookHub`` object with some variables.
@@ -146,7 +148,7 @@ class FacebookHub(object):
             self.fb_url_graph_api = FB_URL_GRAPH_API
         else:
             # insert the v here
-            self.fb_url_graph_api = text_type("{fb_url_graph_api}/v{version}").format(
+            self.fb_url_graph_api = str("{fb_url_graph_api}/v{version}").format(
                 fb_url_graph_api=FB_URL_GRAPH_API, version=self.fb_api_version
             )
         self.fb_url_web = FB_URL_WEB
@@ -163,7 +165,12 @@ class FacebookHub(object):
         self.app_id = app_id
 
     @require_authenticated_hub
-    def oauth_code__url_dialog(self, redirect_uri=None, scope=None, auth_type=None):
+    def oauth_code__url_dialog(
+        self,
+        redirect_uri: Optional[str] = None,
+        scope: Optional[str] = None,
+        auth_type: Optional[str] = None,
+    ) -> str:
         """
         Generates the URL for an oAuth dialog to Facebook for a "code" flow.
         This flow will return the user to your website with a 'code' object in a query param.
@@ -187,8 +194,11 @@ class FacebookHub(object):
 
     @require_authenticated_hub
     def oauth_code__url_access_token(
-        self, submitted_code=None, redirect_uri=None, scope=None
-    ):
+        self,
+        submitted_code: Optional[str] = None,
+        redirect_uri: Optional[str] = None,
+        scope: Optional[str] = None,
+    ) -> str:
         """
         Generates the URL to grab an access token from Facebook.
         This is returned based on EXACTLY matching the app_id, app_secret, and 'code' with the redirect_uri.
@@ -209,14 +219,14 @@ class FacebookHub(object):
             submitted_code=submitted_code,
         )
 
-    def last_response_ratelimited(self):
+    def last_response_ratelimited(self) -> Optional[Dict]:
         warn_future(
             """Deprecated `last_response_ratelimited()`; call `last_response_usage` property instead"""
         )
         return self.last_response_usage
 
     @property
-    def last_response_usage(self):
+    def last_response_usage(self) -> Optional[Dict]:
         """
         This property checks headers for `x-page-usage`, `x-app-usage`, x-ad-account-usage:
 
@@ -250,7 +260,7 @@ class FacebookHub(object):
         return None
 
     @property
-    def last_response_is_ratelimited(self):
+    def last_response_is_ratelimited(self) -> bool:
         """
         checks for ratelimited response header
         """
@@ -265,10 +275,15 @@ class FacebookHub(object):
                         return True
         return False
 
-    def generate__appsecret_proof(self, access_token=None):
+    def generate__appsecret_proof(
+        self,
+        access_token: Optional[str] = None,
+    ) -> Optional[str]:
         """
         https://developers.facebook.com/docs/graph-api/securing-requests
         """
+        if not self.app_secret:
+            return None
         if not self.app_secretproof:
             return None
         if access_token is None:
@@ -283,14 +298,14 @@ class FacebookHub(object):
 
     def api_proxy(
         self,
-        url=None,
-        post_data=None,
-        expected_format="json.loads",
-        is_delete=False,
-        ssl_verify=None,
-        access_token=None,
-        get_data=None,
-    ):
+        url: Optional[str] = None,
+        post_data: Optional[Dict] = None,
+        expected_format: str = "json.loads",
+        is_delete: bool = False,
+        ssl_verify: Optional[bool] = None,
+        access_token: Optional[str] = None,
+        get_data: Optional[Dict] = None,
+    ) -> Union[Dict, List]:
         """
         General proxy access
 
@@ -302,12 +317,14 @@ class FacebookHub(object):
             ssl_verify = self.ssl_verify
 
         # stash the original url
-        _url_original = url
+        # _url_original = url
 
         # quickly
+        _url: str
         if not url:
-            url = "%s/" % self.fb_url_graph_api
+            # url = "%s/" % self.fb_url_graph_api
             url = self.fb_url_graph_api
+            _url = str(url)
         else:
             _url_compare = url.lower()
             if _url_compare[:7] == "http://":
@@ -319,29 +336,31 @@ class FacebookHub(object):
                 pass
             else:
                 if _url_compare[0] == "/":
-                    url = self.fb_url_graph_api + url
+                    if self.fb_url_graph_api:
+                        url = self.fb_url_graph_api + url
                 else:
                     raise ApiError("Not sure what sort of endpoint you are thinking of")
+            _url = url
 
         # add in an access token to URLs if needed.
         if access_token:
             if not get_data or not get_data.get("access_token"):
-                if "access_token=" not in url:
+                if "access_token=" not in _url:
                     _access_token = urlencode(dict(access_token=access_token))
-                    if "?" not in url:
-                        url += "?" + _access_token
+                    if "?" not in _url:
+                        _url += "?" + _access_token
                     else:
-                        url += "&" + _access_token
+                        _url += "&" + _access_token
         else:
             # derive the access token if possible from the url
             if post_data and "access_token" in post_data:
                 access_token = post_data["access_token"]
             elif get_data and "access_token" in get_data:
                 access_token = get_data["access_token"]
-            elif "access_token=" in url:
-                _parsed = urlparse(url)
+            elif "access_token=" in _url:
+                _parsed = urlparse(_url)
                 if _parsed.query:
-                    _qs = parse_qs(_parsed.query)
+                    _qs: Dict[str, Any] = parse_qs(_parsed.query)
                     access_token = _qs.get(
                         "access_token"
                     )  # this will be `None` or a list
@@ -349,12 +368,13 @@ class FacebookHub(object):
 
         if self.app_secretproof:
             if access_token:
-                if "access_token=" in url:
-                    if "appsecret_proof=" not in url:
+                if "access_token=" in _url:
+                    if "appsecret_proof=" not in _url:
                         _appsecret_proof = self.generate__appsecret_proof(
                             access_token=access_token
                         )
-                        url += "&appsecret_proof=" + _appsecret_proof
+                        if _appsecret_proof:
+                            _url += "&appsecret_proof=" + _appsecret_proof
                 elif get_data and "access_token" in get_data:
                     if "appsecret_proof" not in get_data:
                         _appsecret_proof = self.generate__appsecret_proof(
@@ -373,16 +393,20 @@ class FacebookHub(object):
         try:
             if not post_data:
                 # normal get
-                response = requests.get(url, params=get_data, verify=ssl_verify)
+                response = requests.get(
+                    _url,
+                    params=get_data,
+                    verify=ssl_verify,
+                )
             else:
                 if post_data:
                     if "batch" in post_data:
                         if isinstance(post_data["batch"], list):
                             post_data["batch"] = json.dumps(post_data["batch"])
                 if is_delete:
-                    response = requests.delete(url, data=post_data, verify=ssl_verify)
+                    response = requests.delete(_url, data=post_data, verify=ssl_verify)
                 else:
-                    response = requests.post(url, data=post_data, verify=ssl_verify)
+                    response = requests.post(_url, data=post_data, verify=ssl_verify)
 
             # store the response for possible later debugging by user
             # e.g. `response.headers['X-FB-Debug']`
@@ -391,39 +415,38 @@ class FacebookHub(object):
 
             # response.text is the decoded response
             # response.content is the raw response
-            response_content = response.text
+            response_text = response.text
+            response_parsed = None  # scoping
 
             if response.status_code == 200:
                 if expected_format in ("json.load", "json.loads"):
-                    response_content = json.loads(response_content)
+                    response_parsed = json.loads(response_text)
                     if (
                         (post_data is not None)
                         and isinstance(post_data, dict)
                         and ("batch" in post_data)
                     ):
-                        if not isinstance(response_content, list):
+                        if not isinstance(response_parsed, list):
                             raise ApiResponseError(
                                 message="Batched Graph request expects a list of dicts. Did not get a list.",
-                                response=response_content,
+                                response_content=response_parsed,
                             )
-                        for li in response_content:
+                        for li in response_parsed:
                             if not isinstance(li, dict):
                                 raise ApiResponseError(
                                     message="Batched Graph request expects a list of dicts. Got a list, element not a dict.",
-                                    response=response_content,
+                                    response_content=response_parsed,
                                 )
                             if not all(k in li for k in ("body", "headers", "code")):
                                 raise ApiResponseError(
                                     message="Batched Graph response dict should contain 'body', 'headers', 'code'.",
-                                    response=response_content,
+                                    response_content=response_parsed,
                                 )
                             # the body is a json encoded string itself.  it was previously escaped, so unescape it!
                             li["body"] = json.loads(li["body"])
 
-                elif expected_format == "cgi.parse_qs":
-                    response_content = cgi.parse_qs(response_content)
                 elif expected_format == "urlparse.parse_qs":
-                    response_content = parse_qs(response_content)
+                    response_parsed = parse_qs(response_content)
                 else:
                     raise ValueError("Unexpected Format: %s" % expected_format)
             else:
@@ -431,11 +454,15 @@ class FacebookHub(object):
                     print(response)
                     print(response.__dict__)
                 if response.status_code == 400:
-                    rval = ""
                     try:
-                        rval = json.loads(response_content)
-                        if "error" in rval:
-                            error = reformat_error(rval["error"])
+                        if response_content is None:
+                            raise ApiError(
+                                message="I don't know how to handle `None` for response content",
+                                code=400,
+                            )
+                        response_parsed = json.loads(response_content)
+                        if "error" in response_parsed:
+                            error = reformat_error(response_parsed["error"])
                             if ("code" in error) and error["code"]:
                                 if error["code"] == 1:
                                     # Error validating client secret
@@ -501,16 +528,18 @@ class FacebookHub(object):
                                 raise ApiAuthError(**error)
                             raise ApiError(**error)
                         raise ApiError(
-                            message="I don't know how to handle this error (%s)" % rval,
+                            message="I don't know how to handle this error (%s)"
+                            % response_parsed,
                             code=400,
                         )
                     except json.JSONDecodeError as exc:
                         raise ApiError(
-                            message="Could not parse JSON from the error (%s)" % rval,
+                            message="Could not parse JSON from the error (%s)"
+                            % response_parsed,
                             code=400,
                             raised=exc,
                         )
-                    except Exception as exc:
+                    except Exception as exc:  # noqa: F841
                         raise
                 if self.last_response_is_ratelimited:
                     raise ApiRatelimitedError(
@@ -522,7 +551,7 @@ class FacebookHub(object):
                     message="Could not communicate with the API",
                     code=response.status_code,
                 )
-            return response_content
+            return response_parsed
         except json.JSONDecodeError as exc:
             raise ApiError(
                 message="Could not parse JSON from the error (%s)" % exc, raised=exc
@@ -535,8 +564,12 @@ class FacebookHub(object):
 
     @require_authenticated_hub
     def oauth_code__get_access_token(
-        self, submitted_code=None, redirect_uri=None, scope=None, keep_response=None
-    ):
+        self,
+        submitted_code: Optional[str] = None,
+        redirect_uri: Optional[str] = None,
+        scope: Optional[str] = None,
+        keep_response: Optional[bool] = None,
+    ) -> Union[str, Tuple[str, Dict]]:
         """
         Gets the access token from Facebook that corresponds with a code.
         This uses `requests` to open the url, so should be considered as blocking code.
@@ -553,19 +586,25 @@ class FacebookHub(object):
         )
         try:
             response = self.api_proxy(url_access_token, expected_format="json.loads")
+            if not isinstance(response, dict):
+                raise ApiError(message="invalid response; expected single dict")
             if "access_token" not in response:
                 raise ApiError(message="invalid response")
             access_token = response["access_token"]
             if keep_response:
                 return access_token, response
             return access_token
-        except:
+        except:  # noqa: E722
             raise
 
     @require_authenticated_hub
     def oauth_code__get_access_token_and_profile(
-        self, submitted_code=None, redirect_uri=None, scope=None, fields=None
-    ):
+        self,
+        submitted_code: Optional[str] = None,
+        redirect_uri: Optional[str] = None,
+        scope: Optional[str] = None,
+        fields: Optional[str] = None,
+    ) -> Tuple[str, Optional[Union[Dict, List]]]:
         """
         Gets the access token AND a profile from Facebook that corresponds with a code.
         This method wraps a call to `oauth_code__get_access_token`, then wraps `graph__get_profile_for_access_token` which opens a json object at the url returned by `graph__url_me_for_access_token`.
@@ -582,12 +621,17 @@ class FacebookHub(object):
             profile = self.graph__get_profile_for_access_token(
                 access_token=access_token, fields=fields
             )
-        except:
+        except:  # noqa: E722
             raise
         return (access_token, profile)
 
     @require_authenticated_hub
-    def oauth_token__url_dialog(self, redirect_uri=None, scope=None, auth_type=None):
+    def oauth_token__url_dialog(
+        self,
+        redirect_uri: Optional[str] = None,
+        scope: Optional[str] = None,
+        auth_type: Optional[str] = None,
+    ) -> str:
         """
         Generates the URL for an oAuth dialog to Facebook.
         This flow will return the user to your website with a 'token' object as a URI hashstring.
@@ -612,7 +656,10 @@ class FacebookHub(object):
         )
 
     @require_authenticated_hub
-    def oauth__url_extend_access_token(self, access_token=None):
+    def oauth__url_extend_access_token(
+        self,
+        access_token: Optional[str] = None,
+    ) -> str:
         """
         Generates the URL to extend an access token from Facebook.
 
@@ -638,7 +685,10 @@ class FacebookHub(object):
         )
 
     @require_authenticated_hub
-    def graph__extend_access_token(self, access_token=None):
+    def graph__extend_access_token(
+        self,
+        access_token: Optional[str] = None,
+    ) -> Optional[Union[Dict, List]]:
         """
         see `oauth__url_extend_access_token`
         """
@@ -647,16 +697,23 @@ class FacebookHub(object):
         try:
             url = self.oauth__url_extend_access_token(access_token=access_token)
             response = self.api_proxy(url, expected_format="json.load")
-        except:
+        except:  # noqa: E722
             raise
         return response
 
     @require_authenticated_hub
-    def graph__url_me(self, access_token):
+    def graph__url_me(
+        self,
+        access_token,
+    ):
         raise ValueError("Deprecated; call graph__url_me_for_access_token instead")
 
     @require_authenticated_hub
-    def graph__url_me_for_access_token(self, access_token=None, fields=None):
+    def graph__url_me_for_access_token(
+        self,
+        access_token: Optional[str] = None,
+        fields: Optional[str] = None,
+    ) -> str:
         if access_token is None:
             raise ValueError("must submit access_token")
 
@@ -669,8 +726,12 @@ class FacebookHub(object):
 
     @require_authenticated_hub
     def graph__url_user_for_access_token(
-        self, access_token=None, user=None, action=None, fields=None
-    ):
+        self,
+        access_token: Optional[str] = None,
+        user: Optional[str] = None,
+        action: Optional[str] = None,
+        fields: Optional[str] = None,
+    ) -> str:
         if access_token is None:
             raise ValueError("must submit access_token")
         if user is None:
@@ -686,8 +747,12 @@ class FacebookHub(object):
 
     @require_authenticated_hub
     def graph__get_profile_for_access_token(
-        self, access_token=None, user=None, action=None, fields=None
-    ):
+        self,
+        access_token: Optional[str] = None,
+        user: Optional[str] = None,
+        action: Optional[str] = None,
+        fields: Optional[str] = None,
+    ) -> Optional[Union[Dict, List]]:
         """
         Grabs a profile for a user, corresponding to a profile, from Facebook.
         This uses `requests` to open the url, so should be considered as blocking code.
@@ -711,23 +776,26 @@ class FacebookHub(object):
                     access_token, user=user, action=action, fields=fields
                 )
             profile = self.api_proxy(url, expected_format="json.load")
-        except:
+        except:  # noqa: E722
             raise
         return profile
 
     @require_authenticated_hub
-    def graph__get_profile(self, access_token=None):
+    def graph__get_profile(
+        self,
+        access_token: Optional[str] = None,
+    ):
         raise ValueError("Deprecated; call graph__get_profile_for_access_token instead")
 
     @require_authenticated_hub
     def graph__action_create(
         self,
-        access_token=None,
-        fb_app_namespace=None,
-        fb_action_type_name=None,
-        object_type_name=None,
-        object_instance_url=None,
-    ):
+        access_token: Optional[str] = None,
+        fb_app_namespace: Optional[str] = None,
+        fb_action_type_name: Optional[str] = None,
+        object_type_name: Optional[str] = None,
+        object_instance_url: Optional[str] = None,
+    ) -> Union[Dict, List]:
         if not all((access_token, fb_app_namespace, fb_action_type_name)):
             raise ValueError(
                 "must submit access_token, fb_app_namespace, fb_action_type_name"
@@ -749,13 +817,16 @@ class FacebookHub(object):
         try:
             payload = self.api_proxy(url, post_data, expected_format="json.load")
             return payload
-        except:
+        except:  # noqa: E722
             raise
 
     @require_authenticated_hub
     def graph__action_list(
-        self, access_token=None, fb_app_namespace=None, fb_action_type_name=None
-    ):
+        self,
+        access_token: Optional[str] = None,
+        fb_app_namespace: Optional[str] = None,
+        fb_action_type_name: Optional[str] = None,
+    ) -> Union[Dict, List]:
         if not all((access_token, fb_app_namespace, fb_action_type_name)):
             raise ValueError(
                 "must submit access_token, fb_app_namespace, fb_action_type_name"
@@ -770,11 +841,15 @@ class FacebookHub(object):
         try:
             payload = self.api_proxy(url, expected_format="json.load")
             return payload
-        except:
+        except:  # noqa: E722
             raise
 
     @require_authenticated_hub
-    def graph__action_delete(self, access_token=None, action_id=None):
+    def graph__action_delete(
+        self,
+        access_token: Optional[str] = None,
+        action_id: Optional[str] = None,
+    ) -> Union[Dict, List]:
         if not all((access_token, action_id)):
             raise ValueError("must submit action_id")
 
@@ -789,11 +864,15 @@ class FacebookHub(object):
                 url, post_data=post_data, expected_format="json.load", is_delete=True
             )
             return payload
-        except:
+        except:  # noqa: E722
             raise
 
     @require_authenticated_hub
-    def verify_signed_request(self, signed_request=None, timeout=None):
+    def verify_signed_request(
+        self,
+        signed_request: Optional[str] = None,
+        timeout: Optional[str] = None,
+    ) -> Tuple[Optional[bool], Dict]:
         """
         verifies the signedRequest from Facebook.
         accepts a `timeout` value as a kwarg, to test against the 'issued_at' key within the payload
@@ -820,20 +899,23 @@ class FacebookHub(object):
         following is based on Sunil Arora's blog post - http://sunilarora.org/parsing-signedrequest-parameter-in-python-bas
         """
         if signed_request is None:
-            raise ValueError("must submit signed_request")
+            raise ValueError("must submit `signed_request`")
+        if not self.app_secret:
+            raise ValueError("no configured `app_secret`")
 
-        def base64_url_decode(inp):
+        def base64_url_decode(inp: str) -> bytes:
             padding_factor = (4 - len(inp) % 4) % 4
             inp += "=" * padding_factor
-            return base64.b64decode(
-                text_type(inp).translate(
-                    dict(list(zip(list(map(ord, text_type("-_")), text_type("+/")))))
-                )
-            )
+            try:
+                return base64.urlsafe_b64decode(inp)
+            except binascii.Error:
+                # this could happen if the payload is malformed
+                return b""  # return something that will fail
 
+        signature: str
+        payload: str
         (signature, payload) = signed_request.split(".")
-
-        decoded_signature = base64_url_decode(signature)
+        decoded_signature: bytes = base64_url_decode(signature)
         data = json.loads(base64_url_decode(payload))
 
         if data.get("algorithm").upper() != "HMAC-SHA256":
@@ -845,21 +927,23 @@ class FacebookHub(object):
                 },
             )
 
-        expected_sig = hmac.new(
-            self.app_secret, msg=payload, digestmod=hashlib.sha256
+        expected_sig: bytes = hmac.new(
+            self.app_secret.encode(),
+            msg=payload.encode(),
+            digestmod=hashlib.sha256,
         ).digest()
 
         if decoded_signature != expected_sig:
             return (
                 None,
                 {
-                    "python-error": "signature (%s) != expected_sig (%s)"
+                    "python-error": "signature (%r) != expected_sig (%r)"
                     % (decoded_signature, expected_sig)
                 },
             )
 
         if timeout:
-            time_now = int(time())
+            time_now = int(time.time())
             diff = time_now - data["issued_at"]
             if diff > timeout:
                 data["python-error"] = "payload issued outside of timeout window"
@@ -940,8 +1024,11 @@ class FacebookPyramid(FacebookHub):
 
     @require_authenticated_hub
     def oauth_code__url_access_token(
-        self, submitted_code=None, redirect_uri=None, scope=None
-    ):
+        self,
+        submitted_code: Optional[str] = None,
+        redirect_uri=None,
+        scope=None,
+    ) -> str:
         if submitted_code is None:
             submitted_code = self.request.params.get("code")
         return FacebookHub.oauth_code__url_access_token(
@@ -950,8 +1037,11 @@ class FacebookPyramid(FacebookHub):
 
     @require_authenticated_hub
     def oauth_code__get_access_token(
-        self, submitted_code=None, redirect_uri=None, scope=None
-    ):
+        self,
+        submitted_code=None,
+        redirect_uri=None,
+        scope=None,
+    ) -> str:
         if submitted_code is None:
             submitted_code = self.request.params.get("code")
         return FacebookHub.oauth_code__get_access_token(
@@ -960,8 +1050,12 @@ class FacebookPyramid(FacebookHub):
 
     @require_authenticated_hub
     def oauth_code__get_access_token_and_profile(
-        self, submitted_code=None, redirect_uri=None, scope=None, fields=None
-    ):
+        self,
+        submitted_code=None,
+        redirect_uri=None,
+        scope=None,
+        fields=None,
+    ) -> str:
         if submitted_code is None:
             submitted_code = self.request.params.get("code")
         return FacebookHub.oauth_code__get_access_token_and_profile(

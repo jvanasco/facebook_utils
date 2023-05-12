@@ -1,5 +1,10 @@
 import os
 import re
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
 import warnings
 
 
@@ -17,7 +22,7 @@ def warn_future(message):
 # ------------------------------------------------------------------------------
 
 
-_CONFIG_MAPPING = {
+_CONFIG_MAPPING: Dict[str, Tuple] = {
     "access_token": ("FBUTILS_ACCESS_TOKEN", None),
     "app_domain": ("FBUTILS_APP_DOMAIN", None),
     "app_id": ("FBUTILS_APP_ID", None),
@@ -31,7 +36,7 @@ _CONFIG_MAPPING = {
     "secure_only": ("FBUTILS_SECURE_ONLY", True),
     "ssl_verify": ("FBUTILS_SSL_VERIFY", True),
 }
-_CONFIG_BOOLS = [
+_CONFIG_BOOLS: List[str] = [
     "app_secretproof",
     "debug",
     "secure_only",
@@ -42,8 +47,10 @@ _CONFIG_BOOLS = [
 _CONFIG_MAPPING_REVERSE = {v[0]: k for k, v in _CONFIG_MAPPING.items()}
 
 
-def parse_environ(requires=None):
-    config = {}
+def parse_environ(
+    requires: Optional[List[str]] = None,
+) -> Dict:
+    config: Dict[str, Any] = {}
     for (_key, _settings) in _CONFIG_MAPPING.items():
         (_env_var, _default) = _settings
         config[_key] = os.environ.get(_env_var, _default)
@@ -66,6 +73,6 @@ def parse_environ(requires=None):
             if config[_setting] is None:
                 _errors.append(_key)
         if _errors:
-            _errors = ", ".join(["`%s`" % i for i in _errors])
-            raise ValueError("Missing required items: %s" % _errors)
+            errors = ", ".join(["`%s`" % i for i in _errors])
+            raise ValueError("Missing required items: %s" % errors)
     return config
