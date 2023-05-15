@@ -20,6 +20,7 @@ install_requires = [
     "requests>=1.2",
 ]
 tests_require = [
+    "mypy",
     "pytest",
 ]
 testing_extras = tests_require + []

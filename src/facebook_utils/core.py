@@ -312,7 +312,7 @@ class FacebookHub(object):
         If using this directly, you probably want to pass in an "access_token" kwarg in `post_data`
         """
         response = None
-        response_content = None
+        response_parsed = None
         if ssl_verify is None:
             ssl_verify = self.ssl_verify
 
@@ -446,7 +446,7 @@ class FacebookHub(object):
                             li["body"] = json.loads(li["body"])
 
                 elif expected_format == "urlparse.parse_qs":
-                    response_parsed = parse_qs(response_content)
+                    response_parsed = parse_qs(response_text)
                 else:
                     raise ValueError("Unexpected Format: %s" % expected_format)
             else:
@@ -455,12 +455,18 @@ class FacebookHub(object):
                     print(response.__dict__)
                 if response.status_code == 400:
                     try:
-                        if response_content is None:
+                        try:
+                            # try loading this into json.
+                            # if it passes, awesome
+                            # if it fails, we can error out
+                            response_parsed = json.loads(response_text)
+                        except Exception as exc:  # noqa: F841
+                            pass
+                        if response_parsed is None:
                             raise ApiError(
                                 message="I don't know how to handle `None` for response content",
                                 code=400,
                             )
-                        response_parsed = json.loads(response_content)
                         if "error" in response_parsed:
                             error = reformat_error(response_parsed["error"])
                             if ("code" in error) and error["code"]:

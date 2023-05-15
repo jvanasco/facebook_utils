@@ -16,9 +16,6 @@ The following environment variables are required:
 
 """
 
-# pypi
-from six.moves import input as _input
-
 # local
 import facebook_utils
 from facebook_utils.utils import parse_environ
@@ -59,7 +56,7 @@ def _get_code(_hub):
         ">>> "
     )
     print(_hub.oauth_code__url_dialog())
-    _code = _input("""What is the `code` query param in the url? >>> """)
+    _code = input("""What is the `code` query param in the url? >>> """)
     _code = _code.strip()
     # remove fragments
     _code = _code.split("#")[0]
