@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 """
 INSTRUCTIONS
 
@@ -19,9 +17,6 @@ This tests requires AT LEAST the following set
 import os
 import pdb
 import pprint
-
-# pypi
-from six.moves import input as _input
 
 # local
 import facebook_utils
@@ -61,7 +56,7 @@ def _get_code(_hub):
         "Visit the following url to approve. You will be redirected back to the `FBUTILS_REDIRECT_URI_OAUTH_CODE` URI >>> "
     )
     print(_hub.oauth_code__url_dialog())
-    _code = _input("""What is the `code` query param in the url? >>> """)
+    _code = input("""What is the `code` query param in the url? >>> """)
     _code = _code.strip()
     # remove fragments
     _code = _code.split("#")[0]
