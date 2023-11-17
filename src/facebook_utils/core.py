@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 
 # stdlib
 import base64
@@ -64,7 +63,7 @@ FB_API_VERSION = _fbutils_env["fb_api_version"]
 # ------------------------------------------------------------------------------
 
 
-def require_authenticated_hub(f: Callable):
+def require_authenticated_hub(f: Callable) -> Callable:
     """simple decorator for FacebookHub class methods."""
 
     @wraps(f)
@@ -92,8 +91,8 @@ class FacebookHub(object):
     unauthenticated_hub: bool = False
 
     # these will be urls, preferably versioned
-    fb_url_graph_api: Optional[str] = None
-    fb_url_web: Optional[str] = None
+    fb_url_graph_api: str
+    fb_url_web: str
 
     # stash for debugging
     _last_response: Optional[Response] = None
@@ -277,17 +276,17 @@ class FacebookHub(object):
 
     def generate__appsecret_proof(
         self,
-        access_token: Optional[str] = None,
-    ) -> Optional[str]:
+        access_token: str,
+    ) -> str:
         """
         https://developers.facebook.com/docs/graph-api/securing-requests
         """
         if not self.app_secret:
-            return None
+            raise ValueError("`must configure FacebookHub with a `app_secret`")
         if not self.app_secretproof:
-            return None
+            raise ValueError("`must configure FacebookHub with a `app_secretproof`")
         if access_token is None:
-            return None
+            raise ValueError("`must submit `access_token`")
         # PY3 requires bytes so `encode()`; this is PY2 compatible
         h = hmac.new(
             self.app_secret.encode(),
@@ -796,11 +795,11 @@ class FacebookHub(object):
     @require_authenticated_hub
     def graph__action_create(
         self,
-        access_token: Optional[str] = None,
-        fb_app_namespace: Optional[str] = None,
-        fb_action_type_name: Optional[str] = None,
-        object_type_name: Optional[str] = None,
-        object_instance_url: Optional[str] = None,
+        access_token: str,
+        fb_app_namespace: str,
+        fb_action_type_name: str,
+        object_type_name: str,
+        object_instance_url: str,
     ) -> Union[Dict, List]:
         if not all((access_token, fb_app_namespace, fb_action_type_name)):
             raise ValueError(
@@ -829,9 +828,9 @@ class FacebookHub(object):
     @require_authenticated_hub
     def graph__action_list(
         self,
-        access_token: Optional[str] = None,
-        fb_app_namespace: Optional[str] = None,
-        fb_action_type_name: Optional[str] = None,
+        access_token: str,
+        fb_app_namespace: str,
+        fb_action_type_name: str,
     ) -> Union[Dict, List]:
         if not all((access_token, fb_app_namespace, fb_action_type_name)):
             raise ValueError(
@@ -853,8 +852,8 @@ class FacebookHub(object):
     @require_authenticated_hub
     def graph__action_delete(
         self,
-        access_token: Optional[str] = None,
-        action_id: Optional[str] = None,
+        access_token: str,
+        action_id: str,
     ) -> Union[Dict, List]:
         if not all((access_token, action_id)):
             raise ValueError("must submit action_id")
@@ -876,7 +875,7 @@ class FacebookHub(object):
     @require_authenticated_hub
     def verify_signed_request(
         self,
-        signed_request: Optional[str] = None,
+        signed_request: str,
         timeout: Optional[str] = None,
     ) -> Tuple[Optional[bool], Dict]:
         """

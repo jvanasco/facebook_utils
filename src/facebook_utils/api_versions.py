@@ -7,12 +7,19 @@ from typing import Optional
 
 # ==============================================================================
 
-
-# last checked 2021/03/25
+# last checked 2023/11/17
 # https://developers.facebook.com/docs/graph-api/changelog/versions
 # Version:	Release Date, Expiration Date
 _API_VERSIONS: Dict[str, List[Optional[str]]] = {
-    "10.0": ["Feb 23, 2021", None],
+    "18.0": ["Sep 12, 2023", None],
+    "17.0": ["May 23, 2023", None],
+    "16.0": ["Feb 2, 2023", None],
+    "15.0": ["Sep 15, 2022", None],
+    "14.0": ["May 25, 2024", "Sep 17, 2024"],
+    "13.0": ["Feb 8, 2024", "May 28, 2024"],
+    "12.0": ["Sep 14, 2021", "Feb 8, 2024"],
+    "11.0": ["Jun 8, 2023", "Sep 14, 2023"],
+    "10.0": ["Feb 23, 2021", "Jun 8, 2023"],
     "9.0": ["Nov 10, 2020", "Feb 23, 2023"],
     "8.0": ["Aug 4, 2020", "Nov 1, 2022"],
     "7.0": ["May 5, 2020", "Aug 4, 2022"],
@@ -41,8 +48,13 @@ _API_VERSIONS: Dict[str, List[Optional[str]]] = {
 # >>> datetime.datetime.strptime("Apr 1, 2010", "%b %d, %Y")
 _format = "%b %d, %Y"
 API_VERSIONS = {}
-for (_v, _ks) in _API_VERSIONS.items():
+for _v, _ks in _API_VERSIONS.items():
     API_VERSIONS[_v] = [
         datetime.datetime.strptime(_ks[0], _format),  # type: ignore[arg-type]
         datetime.datetime.strptime(_ks[1], _format) if _ks[1] else None,
     ]
+
+if __name__ == "__main__":
+    import pprint
+
+    pprint.pprint(API_VERSIONS)

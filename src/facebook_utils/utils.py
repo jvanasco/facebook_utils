@@ -15,7 +15,7 @@ RE_api_version_fixable = re.compile(r"\d+\.\d+")
 RE_api_version_valid = re.compile(r"v\d+\.\d+")
 
 
-def warn_future(message):
+def warn_future(message: str):
     warnings.warn(message, FutureWarning, stacklevel=2)
 
 
@@ -51,7 +51,7 @@ def parse_environ(
     requires: Optional[List[str]] = None,
 ) -> Dict:
     config: Dict[str, Any] = {}
-    for (_key, _settings) in _CONFIG_MAPPING.items():
+    for _key, _settings in _CONFIG_MAPPING.items():
         (_env_var, _default) = _settings
         config[_key] = os.environ.get(_env_var, _default)
 

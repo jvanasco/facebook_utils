@@ -3,6 +3,7 @@
 initial typing support
 drop py2
 remove `cgi.parse_qs` option
+replaced some KWARGS with ARGS to drop `None` defaults
 
 
 0.60.0dev0 (unreleased)

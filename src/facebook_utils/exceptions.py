@@ -194,7 +194,6 @@ def reformat_error(
     json_string: Dict,
     raised: Optional[Exception] = None,
 ) -> Dict:
-
     rval = {"message": None, "type": None, "code": None, "raised": None}
 
     for k in rval.keys():

@@ -164,9 +164,9 @@ class FacebookApiUrls(object):
     @classmethod
     def graph__url_user_for_access_token(
         cls,
-        fb_url_graph_api,
-        access_token,
-        user,
+        fb_url_graph_api: str,
+        access_token: str,
+        user: str,
         action: Optional[str] = None,
         app_secretproof: Optional[str] = None,
         fields: Optional[str] = None,
@@ -188,9 +188,9 @@ class FacebookApiUrls(object):
     @classmethod
     def graph__action_create_url(
         cls,
-        fb_url_graph_api,
-        fb_app_namespace,
-        fb_action_type_name,
+        fb_url_graph_api: str,
+        fb_app_namespace: str,
+        fb_action_type_name: str,
     ) -> str:
         url = URL_GRAPH_ACTION_CREATE.format(
             fb_url_graph_api=fb_url_graph_api,
@@ -202,8 +202,8 @@ class FacebookApiUrls(object):
     @classmethod
     def graph__action_delete_url(
         cls,
-        fb_url_graph_api,
-        action_id,
+        fb_url_graph_api: str,
+        action_id: str,
     ) -> str:
         url = URL_GRAPH_ACTION_DELETE.format(
             fb_url_graph_api=fb_url_graph_api, action_id=action_id
