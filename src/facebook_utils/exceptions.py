@@ -1,9 +1,7 @@
 # stdlib
 import datetime
-
-# pypi
-from six import text_type
-
+from typing import Optional
+from typing import TypedDict
 
 # ==============================================================================
 
@@ -19,7 +17,14 @@ class ApiError(Exception):
     response = None
     raised = None
 
-    def __init__(self, code=None, type=None, message=None, response=None, raised=None):
+    def __init__(
+        self,
+        code=None,
+        type=None,
+        message=None,
+        response=None,
+        raised=None,
+    ):
         self.code = code
         self.type = type
         self.message = message
@@ -27,7 +32,7 @@ class ApiError(Exception):
         self.raised = raised
 
     def __str__(self):
-        return text_type("ApiError: {code} | {type} | {message}").format(
+        return "ApiError: {code} | {type} | {message}".format(
             code=self.code, type=self.type, message=self.message
         )
 
@@ -179,18 +184,33 @@ class AuthenticatedHubRequired(Exception):
     pass
 
 
-def reformat_error(json_string, raised=None):
+class ReformattedError(TypedDict):
+    message: Optional[str]
+    type: Optional[str]
+    code: Optional[str]
+    raised: Optional[Exception]
 
-    rval = {"message": None, "type": None, "code": None, "raised": None}
+
+def reformat_error(
+    json_string,
+    raised: Optional[Exception] = None,
+) -> ReformattedError:
+
+    rval: ReformattedError = {
+        "message": None,
+        "type": None,
+        "code": None,
+        "raised": None,
+    }
 
     for k in rval.keys():
         if k in json_string:
-            rval[k] = json_string[k]
+            rval[k] = json_string[k]  # type: ignore[literal-required]
     if raised is not None:
         rval["raised"] = raised
     return rval
 
 
-def facebook_time(fb_time):
+def facebook_time(fb_time: str) -> datetime.datetime:
     """parses Facebook's timestamp into a datetime object"""
     return datetime.datetime.strptime(fb_time, "%Y-%m-%dT%H:%M:%S+0000")

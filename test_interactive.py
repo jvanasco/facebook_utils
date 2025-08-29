@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 """
 INSTRUCTIONS
 
@@ -7,21 +5,16 @@ This tests requires AT LEAST the following set
 
     export FBUTILS_APP_ID=xxxxxxxxx
     export FBUTILS_APP_SECRET=xxxxxxxxxx
-    export FBUTILS_APP_SECRETPROOF=1
+    export FBUTILS_ENABLE_SECRETPROOF=1
     export FBUTILS_APP_SCOPE=email
     export FBUTILS_APP_DOMAIN=xxxxxxxxxx
     export FBUTILS_REDIRECT_URI_OAUTH_CODE=https://myapp.example.com/oauth?response_type=code'
 
 """
 
-
 # stdlib
 import os
-import pdb
 import pprint
-
-# pypi
-from six.moves import input as _input
 
 # local
 import facebook_utils
@@ -34,13 +27,12 @@ from facebook_utils.utils import parse_environ
 REQUIRED_ENV = [
     "FBUTILS_APP_ID",
     "FBUTILS_APP_SECRET",
-    "FBUTILS_APP_SECRETPROOF",
+    "FBUTILS_ENABLE_SECRETPROOF",
     "FBUTILS_APP_DOMAIN",
     "FBUTILS_APP_SCOPE",
     "FBUTILS_REDIRECT_URI_OAUTH_CODE",
 ]
 FB_UTILS_ENV = parse_environ(requires=REQUIRED_ENV)
-
 
 # ------------------------------------------------------------------------------
 
@@ -49,8 +41,8 @@ def new_fb_object():
     return facebook_utils.FacebookHub(
         app_id=FB_UTILS_ENV["app_id"],
         app_secret=FB_UTILS_ENV["app_secret"],
-        app_secretproof=FB_UTILS_ENV["app_secretproof"],
         app_scope=FB_UTILS_ENV["app_scope"],
+        enable_secretproof=FB_UTILS_ENV["enable_secretproof"],
         oauth_code_redirect_uri=FB_UTILS_ENV["oauth_code_redirect_uri"],
         debug_error=True,
     )
@@ -61,10 +53,8 @@ def _get_code(_hub):
         "Visit the following url to approve. You will be redirected back to the `FBUTILS_REDIRECT_URI_OAUTH_CODE` URI >>> "
     )
     print(_hub.oauth_code__url_dialog())
-    _code = _input("""What is the `code` query param in the url? >>> """)
-    _code = _code.strip()
-    # remove fragments
-    _code = _code.split("#")[0]
+    _url = input("""Please copy/paste the entire URL you were redirected to >>> """)
+    _code = _hub.extract__code_from_redirect(_url)
     return _code
 
 
@@ -73,54 +63,62 @@ def _get_code(_hub):
 #
 hub = new_fb_object()
 
-# this one is a bit extended. not always needed
-if True:
-    print(("*" * 40))
-    _code = _get_code(hub)
-    print("fbutils will now try to exchange the code for an access token.")
-    print(">>> fbutils will access the facebook graph api:")
-    print(
-        hub.oauth_code__url_access_token(
-            submitted_code=_code,
-            redirect_uri=FB_UTILS_ENV["oauth_code_redirect_uri"],
-            scope=FB_UTILS_ENV["app_scope"],
+if not FB_UTILS_ENV["access_token"]:
+
+    # this one is a bit extended. not always needed
+    if os.environ.get("FBUTILS_TEST_EXTENDED"):
+
+        print(("*" * 40))
+        _code = _get_code(hub)
+        print("fbutils will now try to exchange the code for an access token.")
+        print(">>> fbutils will access the facebook graph api:")
+        print(
+            hub.oauth_code__url_access_token(
+                submitted_code=_code,
+                redirect_uri=FB_UTILS_ENV["oauth_code_redirect_uri"],
+                scope=FB_UTILS_ENV["app_scope"],
+            )
         )
+        access_token = hub.oauth_code__get_access_token(submitted_code=_code)
+        print("- " * 20)
+        print("Success!")
+        print("!!! The access token is: `%s`" % access_token)
+
+        print(("*" * 40))
+        print(
+            "let's do this again, but use another API tool that will save the full response."
+        )
+        _code = _get_code(hub)
+        print(
+            hub.oauth_code__url_access_token(
+                submitted_code=_code,
+                redirect_uri=FB_UTILS_ENV["oauth_code_redirect_uri"],
+                scope=FB_UTILS_ENV["app_scope"],
+            )
+        )
+        (access_token, response) = hub.oauth_code__get_access_token(
+            submitted_code=_code, keep_response=True
+        )
+        print("- " * 20)
+        print("Success!")
+        print("!!! The access token is: `%s`" % access_token)
+        print("!!! The response is: %s" % pprint.pformat(response))
+
+    print(("*" * 40))
+    print("now let's try to get the Profile & Token at once.")
+    _code = _get_code(hub)
+    (access_token, profile) = hub.oauth_code__get_access_token_and_profile(
+        submitted_code=_code
     )
-    access_token = hub.oauth_code__get_access_token(submitted_code=_code)
     print("- " * 20)
     print("Success!")
     print("!!! The access token is: `%s`" % access_token)
+    print(">>> The profile is: %s" % pprint.pformat(profile))
 
-    print(("*" * 40))
-    print(
-        "let's do this again, but use another API tool that will save the full response."
-    )
-    _code = _get_code(hub)
-    print(
-        hub.oauth_code__url_access_token(
-            submitted_code=_code,
-            redirect_uri=FB_UTILS_ENV["oauth_code_redirect_uri"],
-            scope=FB_UTILS_ENV["app_scope"],
-        )
-    )
-    (access_token, response) = hub.oauth_code__get_access_token(
-        submitted_code=_code, keep_response=True
-    )
-    print("- " * 20)
-    print("Success!")
+else:
+    print("Using ENV access token!")
+    access_token = FB_UTILS_ENV["access_token"]
     print("!!! The access token is: `%s`" % access_token)
-    print("!!! The response is: %s" % pprint.pformat(response))
-
-print(("*" * 40))
-print("now let's try to get the Profile & Token at once.")
-_code = _get_code(hub)
-(access_token, profile) = hub.oauth_code__get_access_token_and_profile(
-    submitted_code=_code
-)
-print("- " * 20)
-print("Success!")
-print("!!! The access token is: `%s`" % access_token)
-print(">>> The profile is: %s" % pprint.pformat(profile))
 
 
 print(("*" * 40))

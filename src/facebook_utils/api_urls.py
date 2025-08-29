@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from six.moves.urllib.parse import urlencode
-from six.moves.urllib.parse import quote_plus
+from typing import Optional
+from urllib.parse import quote_plus
+from urllib.parse import urlencode
 
 # ==============================================================================
 
@@ -12,29 +13,32 @@ FB_URL_WEB = "https://www.facebook.com"
 
 # ------------------------------------------------------------------------------
 
-URL_OAUTH_DIALOG_CODE = u"{fb_url_web}/dialog/oauth?client_id={app_id}&scope={scope}&redirect_uri={redirect_uri}{auth_type}"
-URL_OAUTH_DIALOG_TOKEN = u"{fb_url_web}/dialog/oauth?client_id={app_id}&scope={scope}&redirect_uri={redirect_uri}&response_type=token"
-URL_OAUTH_ACCESSTOKEN_CODE = u"{fb_url_graph_api}/oauth/access_token?client_id={app_id}&redirect_uri={redirect_uri}&client_secret={app_secret}&code={code}"
-URL_OAUTH_ACCESSTOKEN_EXTEND = u"{fb_url_graph_api}/oauth/access_token?grant_type=fb_exchange_token&client_id={app_id}&client_secret={app_secret}&fb_exchange_token={access_token}"
+URL_OAUTH_DIALOG_CODE = "{fb_url_web}/dialog/oauth?client_id={app_id}&scope={scope}&redirect_uri={redirect_uri}{auth_type}"
+URL_OAUTH_DIALOG_TOKEN = "{fb_url_web}/dialog/oauth?client_id={app_id}&scope={scope}&redirect_uri={redirect_uri}&response_type=token"
+URL_OAUTH_ACCESSTOKEN_CODE = "{fb_url_graph_api}/oauth/access_token?client_id={app_id}&redirect_uri={redirect_uri}&client_secret={app_secret}&code={code}"
+URL_OAUTH_ACCESSTOKEN_EXTEND = "{fb_url_graph_api}/oauth/access_token?grant_type=fb_exchange_token&client_id={app_id}&client_secret={app_secret}&fb_exchange_token={access_token}"
 URL_GRAPH_ME_ACCESS_TOKEN = (
-    u"{fb_url_graph_api}/me?{qs}"  # qs is likely {access_token}&{fields}
+    "{fb_url_graph_api}/me?{qs}"  # qs is likely {access_token}&{fields}
 )
 URL_GRAPH_USER_ACCESS_TOKEN = (
-    u"{fb_url_graph_api}/{user}?{qs}"  # qs is likely {access_token}&{fields}
+    "{fb_url_graph_api}/{user}?{qs}"  # qs is likely {access_token}&{fields}
 )
 URL_GRAPH_USER_ACTION_ACCESS_TOKEN = (
-    u"{fb_url_graph_api}/{user}/{action}?{qs}"  # qs is likely {access_token}&{fields}
+    "{fb_url_graph_api}/{user}/{action}?{qs}"  # qs is likely {access_token}&{fields}
 )
-URL_GRAPH_ACTION_LIST_ACCESS_TOKEN = u"{fb_url_graph_api}/me/{fb_app_namespace}:{fb_action_type_name}?access_token={access_token}"
+URL_GRAPH_ACTION_LIST_ACCESS_TOKEN = "{fb_url_graph_api}/me/{fb_app_namespace}:{fb_action_type_name}?access_token={access_token}"
 URL_GRAPH_ACTION_CREATE = (
-    u"{fb_url_graph_api}/me/{fb_fb_app_namespace}:{fb_action_type_name}"
+    "{fb_url_graph_api}/me/{fb_fb_app_namespace}:{fb_action_type_name}"
 )
-URL_GRAPH_ACTION_DELETE = u"{fb_url_graph_api}/{action_id}"
+URL_GRAPH_ACTION_DELETE = "{fb_url_graph_api}/{action_id}"
 
 # ------------------------------------------------------------------------------
 
 
-def extend__appsecret_proof(url, appsecret_proof=None):
+def extend__appsecret_proof(
+    url: str,
+    appsecret_proof: Optional[str] = None,
+) -> str:
     if appsecret_proof:
         return "%s&appsecret_proof=%s" % (url, appsecret_proof)
     return url
@@ -43,8 +47,13 @@ def extend__appsecret_proof(url, appsecret_proof=None):
 class FacebookApiUrls(object):
     @classmethod
     def oauth_code__url_dialog(
-        cls, fb_url_web, app_id, redirect_uri, scope, auth_type=""
-    ):
+        cls,
+        fb_url_web: str,
+        app_id: str,
+        redirect_uri: str,
+        scope: str,
+        auth_type: str = "",
+    ) -> str:
         """
         endpoint params:
         :required:
@@ -66,8 +75,13 @@ class FacebookApiUrls(object):
 
     @classmethod
     def oauth_token__url_dialog(
-        cls, fb_url_web, app_id, redirect_uri, scope, auth_type=""
-    ):
+        cls,
+        fb_url_web: str,
+        app_id: str,
+        redirect_uri: str,
+        scope: str,
+        auth_type: str = "",
+    ) -> str:
         auth_type = "&auth_type=%s" % auth_type if auth_type else ""
         url = URL_OAUTH_DIALOG_TOKEN.format(
             fb_url_web=fb_url_web,
@@ -80,8 +94,13 @@ class FacebookApiUrls(object):
 
     @classmethod
     def oauth_code__url_access_token(
-        cls, fb_url_graph_api, app_id, redirect_uri, app_secret, submitted_code
-    ):
+        cls,
+        fb_url_graph_api: str,
+        app_id: str,
+        redirect_uri: str,
+        app_secret,
+        submitted_code: str,
+    ) -> str:
         url = URL_OAUTH_ACCESSTOKEN_CODE.format(
             fb_url_graph_api=fb_url_graph_api,
             app_id=app_id,
@@ -93,8 +112,12 @@ class FacebookApiUrls(object):
 
     @classmethod
     def oauth__url_extend_access_token(
-        cls, fb_url_graph_api, app_id, app_secret, access_token
-    ):
+        cls,
+        fb_url_graph_api: str,
+        app_id: str,
+        app_secret: str,
+        access_token: str,
+    ) -> str:
         url = URL_OAUTH_ACCESSTOKEN_EXTEND.format(
             fb_url_graph_api=fb_url_graph_api,
             app_id=app_id,
@@ -105,24 +128,31 @@ class FacebookApiUrls(object):
 
     @classmethod
     def graph__url_me_for_access_token(
-        cls, fb_url_graph_api, access_token, app_secretproof=None, fields=None
-    ):
-        qs = {"access_token": access_token}
+        cls,
+        fb_url_graph_api: str,
+        access_token: str,
+        app_secretproof: Optional[str] = None,
+        fields: Optional[str] = None,
+    ) -> str:
+        _qs = {"access_token": access_token}
         if fields is not None:
-            qs["fields"] = fields
-        qs = urlencode(qs)
-        url = URL_GRAPH_ME_ACCESS_TOKEN.format(fb_url_graph_api=fb_url_graph_api, qs=qs)
+            _qs["fields"] = fields
+        qs = urlencode(_qs)
+        url = URL_GRAPH_ME_ACCESS_TOKEN.format(
+            fb_url_graph_api=fb_url_graph_api,
+            qs=qs,
+        )
         return extend__appsecret_proof(url, app_secretproof)
 
     @classmethod
     def graph__action_list_url(
         cls,
-        fb_url_graph_api,
-        fb_app_namespace,
-        fb_action_type_name,
-        access_token,
-        app_secretproof=None,
-    ):
+        fb_url_graph_api: str,
+        fb_app_namespace: str,
+        fb_action_type_name: str,
+        access_token: str,
+        app_secretproof: Optional[str] = None,
+    ) -> str:
         url = URL_GRAPH_ACTION_LIST_ACCESS_TOKEN.format(
             fb_url_graph_api=fb_url_graph_api,
             fb_app_namespace=fb_app_namespace,
@@ -134,31 +164,37 @@ class FacebookApiUrls(object):
     @classmethod
     def graph__url_user_for_access_token(
         cls,
-        fb_url_graph_api,
-        access_token,
-        user,
-        action=None,
-        app_secretproof=None,
-        fields=None,
-    ):
-        qs = {"access_token": access_token}
+        fb_url_graph_api: str,
+        access_token: str,
+        user: str,
+        action: Optional[str] = None,
+        app_secretproof: Optional[str] = None,
+        fields: Optional[str] = None,
+    ) -> str:
+        _qs = {"access_token": access_token}
         if fields is not None:
-            qs["fields"] = fields
-        qs = urlencode(qs)
+            _qs["fields"] = fields
+        qs = urlencode(_qs)
         if action is None:
             url = URL_GRAPH_USER_ACCESS_TOKEN.format(
                 fb_url_graph_api=fb_url_graph_api, user=user, qs=qs
             )
         else:
             url = URL_GRAPH_USER_ACTION_ACCESS_TOKEN.format(
-                fb_url_graph_api=fb_url_graph_api, user=user, action=action, qs=qs
+                fb_url_graph_api=fb_url_graph_api,
+                user=user,
+                action=action,
+                qs=qs,
             )
         return extend__appsecret_proof(url, app_secretproof)
 
     @classmethod
     def graph__action_create_url(
-        cls, fb_url_graph_api, fb_app_namespace, fb_action_type_name
-    ):
+        cls,
+        fb_url_graph_api: str,
+        fb_app_namespace: str,
+        fb_action_type_name: str,
+    ) -> str:
         url = URL_GRAPH_ACTION_CREATE.format(
             fb_url_graph_api=fb_url_graph_api,
             fb_app_namespace=fb_app_namespace,
@@ -167,7 +203,11 @@ class FacebookApiUrls(object):
         return url
 
     @classmethod
-    def graph__action_delete_url(cls, fb_url_graph_api, action_id):
+    def graph__action_delete_url(
+        cls,
+        fb_url_graph_api: str,
+        action_id: str,
+    ) -> str:
         url = URL_GRAPH_ACTION_DELETE.format(
             fb_url_graph_api=fb_url_graph_api, action_id=action_id
         )

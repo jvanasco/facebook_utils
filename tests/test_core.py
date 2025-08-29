@@ -1,21 +1,18 @@
 # stdlib
 import datetime
 import os
-import pdb
-import pprint
 import time
+from typing import Callable
+from typing import Optional
 import unittest
-
-try:
-    from urllib import quote_plus
-except:
-    from urllib.parse import quote_plus
+from urllib.parse import quote_plus
 
 # local
 import facebook_utils as fb
 from facebook_utils.api_versions import API_VERSIONS
 from facebook_utils.exceptions import ApiRatelimitedError
 from facebook_utils.utils import parse_environ
+from facebook_utils.utils import TYPE_CONFIG_PARSED
 
 
 # ==============================================================================
@@ -34,7 +31,7 @@ class _TestVersionedAPI(object):
     mixin to ensure we do not test against old versions
     """
 
-    fb_api_version = None
+    fb_api_version: Optional[str] = None
 
     def setUp(self):
         if self.fb_api_version:
@@ -51,15 +48,23 @@ class _TestVersionedAPI(object):
 
 
 class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
-    FB_UTILS_ENV = None
-    expect_email_in_profile = False
+    FB_UTILS_ENV: TYPE_CONFIG_PARSED
+    expect_email_in_profile: bool = False
 
-    def _newHub(self):
+    # via unittest.TestCase
+    assertEqual: Callable
+    assertFalse: Callable
+    assertIn: Callable
+    assertNotIn: Callable
+    assertRaises: Callable
+    assertTrue: Callable
+
+    def _newHub(self) -> fb.FacebookHub:
         """
         We need the following env variables set:
             FBUTILS_APP_ID
             FBUTILS_APP_SECRET
-            FBUTILS_APP_SECRETPROOF
+            FBUTILS_ENABLE_SECRETPROOF
 
             FBUTILS_APP_DOMAIN
             FBUTILS_ACCESS_TOKEN*
@@ -71,7 +76,7 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
         _REQUIRED_ENV = [
             "FBUTILS_APP_ID",
             "FBUTILS_APP_SECRET",
-            "FBUTILS_APP_SECRETPROOF",
+            "FBUTILS_ENABLE_SECRETPROOF",
             "FBUTILS_ACCESS_TOKEN",
             "FBUTILS_APP_DOMAIN",
         ]
@@ -80,7 +85,7 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
         hub = fb.FacebookHub(
             app_id=self.FB_UTILS_ENV["app_id"],
             app_secret=self.FB_UTILS_ENV["app_secret"],
-            app_secretproof=self.FB_UTILS_ENV["app_secretproof"],
+            enable_secretproof=self.FB_UTILS_ENV["enable_secretproof"],
             app_scope="email",
             app_domain=self.FB_UTILS_ENV["app_domain"],
             oauth_code_redirect_uri="https://%s/oauth-code"
@@ -91,7 +96,7 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
         )
         return hub
 
-    def _fb_api_base__dialog(self):
+    def _fb_api_base__dialog(self) -> str:
         return "https://www.facebook.com/dialog"
 
     def test_oauth_code__url_dialog(self):
@@ -390,7 +395,14 @@ class TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
 
 
 class TestFacebookUtils_UnAuthenticated(_TestVersionedAPI):
-    def _newHub(self):
+
+    # via unittest.testCase
+    assertEqual: Callable
+    assertFalse: Callable
+    assertIn: Callable
+    assertTrue: Callable
+
+    def _newHub(self) -> fb.FacebookHub:
         """
         this is for unauthenticated tests
         """
@@ -479,106 +491,52 @@ class TestFacebookUtils_Authenticated_NoVersion(
     fb_api_version = None
 
 
-class TestFacebookUtils_Authenticated_2_7(
+class TestFacebookUtils_Authenticated_16_0(
     TestFacebookUtils_Authenticated_Core, unittest.TestCase
 ):
-    fb_api_version = "2.7"
+    fb_api_version = "16.0"
 
 
-class TestFacebookUtils_Authenticated_2_8(
+class TestFacebookUtils_Authenticated_17_0(
     TestFacebookUtils_Authenticated_Core, unittest.TestCase
 ):
-    fb_api_version = "2.8"
+    fb_api_version = "17.0"
 
 
-class TestFacebookUtils_Authenticated_2_9(
+class TestFacebookUtils_Authenticated_18_0(
     TestFacebookUtils_Authenticated_Core, unittest.TestCase
 ):
-    fb_api_version = "2.9"
+    fb_api_version = "18.0"
 
 
-class TestFacebookUtils_Authenticated_2_10(
+class TestFacebookUtils_Authenticated_19_0(
     TestFacebookUtils_Authenticated_Core, unittest.TestCase
 ):
-    fb_api_version = "2.10"
+    fb_api_version = "19.0"
 
 
-class TestFacebookUtils_Authenticated_2_11(
+class TestFacebookUtils_Authenticated_20_0(
     TestFacebookUtils_Authenticated_Core, unittest.TestCase
 ):
-    fb_api_version = "2.11"
+    fb_api_version = "20.0"
 
 
-class TestFacebookUtils_Authenticated_2_12(
+class TestFacebookUtils_Authenticated_21_0(
     TestFacebookUtils_Authenticated_Core, unittest.TestCase
 ):
-    fb_api_version = "2.12"
+    fb_api_version = "21.0"
 
 
-class TestFacebookUtils_Authenticated_3_0(
+class TestFacebookUtils_Authenticated_22_0(
     TestFacebookUtils_Authenticated_Core, unittest.TestCase
 ):
-    fb_api_version = "3.0"
+    fb_api_version = "22.0"
 
 
-class TestFacebookUtils_Authenticated_3_1(
+class TestFacebookUtils_Authenticated_23_0(
     TestFacebookUtils_Authenticated_Core, unittest.TestCase
 ):
-    fb_api_version = "3.1"
-
-
-class TestFacebookUtils_Authenticated_3_2(
-    TestFacebookUtils_Authenticated_Core, unittest.TestCase
-):
-    fb_api_version = "3.2"
-
-
-class TestFacebookUtils_Authenticated_3_3(
-    TestFacebookUtils_Authenticated_Core, unittest.TestCase
-):
-    fb_api_version = "3.3"
-
-
-class TestFacebookUtils_Authenticated_4_0(
-    TestFacebookUtils_Authenticated_Core, unittest.TestCase
-):
-    fb_api_version = "4.0"
-
-
-class TestFacebookUtils_Authenticated_5_0(
-    TestFacebookUtils_Authenticated_Core, unittest.TestCase
-):
-    fb_api_version = "5.0"
-
-
-class TestFacebookUtils_Authenticated_6_0(
-    TestFacebookUtils_Authenticated_Core, unittest.TestCase
-):
-    fb_api_version = "6.0"
-
-
-class TestFacebookUtils_Authenticated_7_0(
-    TestFacebookUtils_Authenticated_Core, unittest.TestCase
-):
-    fb_api_version = "7.0"
-
-
-class TestFacebookUtils_Authenticated_8_0(
-    TestFacebookUtils_Authenticated_Core, unittest.TestCase
-):
-    fb_api_version = "8.0"
-
-
-class TestFacebookUtils_Authenticated_9_0(
-    TestFacebookUtils_Authenticated_Core, unittest.TestCase
-):
-    fb_api_version = "9.0"
-
-
-class TestFacebookUtils_Authenticated_10_0(
-    TestFacebookUtils_Authenticated_Core, unittest.TestCase
-):
-    fb_api_version = "10.0"
+    fb_api_version = "23.0"
 
 
 # test Unaauthenticated
@@ -590,106 +548,49 @@ class TestFacebookUtils_UnAuthenticated_NoVersion(
     fb_api_version = None
 
 
-class TestFacebookUtils_UnAuthenticated_2_7(
+class TestFacebookUtils_UnAuthenticated_16_0(
     TestFacebookUtils_UnAuthenticated, unittest.TestCase
 ):
-    fb_api_version = "2.7"
+    fb_api_version = "16.0"
 
 
-class TestFacebookUtils_UnAuthenticated_2_8(
+class TestFacebookUtils_UnAuthenticated_17_0(
     TestFacebookUtils_UnAuthenticated, unittest.TestCase
 ):
-    fb_api_version = "2.8"
+    fb_api_version = "17.0"
 
 
-class TestFacebookUtils_UnAuthenticated_2_9(
+class TestFacebookUtils_UnAuthenticated_18_0(
     TestFacebookUtils_UnAuthenticated, unittest.TestCase
 ):
-    fb_api_version = "2.9"
+    fb_api_version = "18.0"
 
 
-class TestFacebookUtils_UnAuthenticated_2_10(
+class TestFacebookUtils_UnAuthenticated_19_0(
     TestFacebookUtils_UnAuthenticated, unittest.TestCase
 ):
-    fb_api_version = "2.10"
+    fb_api_version = "19.0"
 
 
-class TestFacebookUtils_UnAuthenticated_2_11(
+class TestFacebookUtils_UnAuthenticated_20_0(
     TestFacebookUtils_UnAuthenticated, unittest.TestCase
 ):
-    fb_api_version = "2.11"
+    fb_api_version = "20.0"
 
 
-class TestFacebookUtils_UnAuthenticated_2_12(
+class TestFacebookUtils_UnAuthenticated_21_0(
     TestFacebookUtils_UnAuthenticated, unittest.TestCase
 ):
-    fb_api_version = "2.12"
+    fb_api_version = "21.0"
 
 
-class TestFacebookUtils_UnAuthenticated_3_0(
+class TestFacebookUtils_UnAuthenticated_22_0(
     TestFacebookUtils_UnAuthenticated, unittest.TestCase
 ):
-    fb_api_version = "3.0"
+    fb_api_version = "22.0"
 
 
-class TestFacebookUtils_UnAuthenticated_3_1(
+class TestFacebookUtils_UnAuthenticated_23_0(
     TestFacebookUtils_UnAuthenticated, unittest.TestCase
 ):
-    fb_api_version = "3.1"
-
-
-class TestFacebookUtils_UnAuthenticated_3_2(
-    TestFacebookUtils_UnAuthenticated, unittest.TestCase
-):
-    fb_api_version = "3.2"
-
-
-class TestFacebookUtils_UnAuthenticated_3_3(
-    TestFacebookUtils_UnAuthenticated, unittest.TestCase
-):
-    fb_api_version = "3.3"
-
-
-class TestFacebookUtils_UnAuthenticated_4_0(
-    TestFacebookUtils_UnAuthenticated, unittest.TestCase
-):
-    fb_api_version = "4.0"
-
-
-class TestFacebookUtils_UnAuthenticated_5_0(
-    TestFacebookUtils_UnAuthenticated, unittest.TestCase
-):
-    fb_api_version = "5.0"
-
-
-class TestFacebookUtils_UnAuthenticated_6_0(
-    TestFacebookUtils_UnAuthenticated, unittest.TestCase
-):
-    fb_api_version = "6.0"
-
-
-class TestFacebookUtils_UnAuthenticated_7_0(
-    TestFacebookUtils_UnAuthenticated, unittest.TestCase
-):
-    fb_api_version = "7.0"
-
-
-class TestFacebookUtils_UnAuthenticated_8_0(
-    TestFacebookUtils_UnAuthenticated, unittest.TestCase
-):
-    fb_api_version = "8.0"
-
-
-class TestFacebookUtils_UnAuthenticated_9_0(
-    TestFacebookUtils_UnAuthenticated, unittest.TestCase
-):
-    fb_api_version = "9.0"
-
-
-class TestFacebookUtils_UnAuthenticated_10_0(
-    TestFacebookUtils_UnAuthenticated, unittest.TestCase
-):
-    fb_api_version = "10.0"
-
-
-# ==============================================================================
+    fb_api_version = "23.0"

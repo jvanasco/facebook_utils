@@ -1,4 +1,4 @@
-0.60.0dev0 (unreleased)
+0.60.0
 ------------------
 - black formatting
 - inline doc addition
@@ -11,7 +11,15 @@
 - new `.utils` namespace;
 - * migrated some functions into it
 - * added a dedicated parser for environment variables; designed to streamline testing
-
+- removed `cgi.parse_qs` as it was dropped in python 3.8
+- env var `FBUTILS_APP_SECRETPROOF` is now `FBUTILS_ENABLE_SECRETPROOF`
+- `.verify_signed_request` will now ALWAYS raise `NotImplementedError`.
+  It is unclear if Facebook still creates signed requests with this method, or
+  how to trigger them. Due to the lack of useful documentation from Facebook and
+  the inability to create and test against one of these payloads, the function
+  is not just a referece and will immediately raise an Exception if accessed.
+- drop python 2.7, 3.5, 3.6
+  
 
 0.50.5 (2019-04-26)
 ------------------
