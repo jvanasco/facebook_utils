@@ -17,6 +17,7 @@ jobs:
       pull-requests: write
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false # This prevents immediate cancellation of other matrix jobs
       matrix:
         os:
           - "ubuntu-22.04"
