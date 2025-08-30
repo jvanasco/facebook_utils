@@ -54,16 +54,26 @@ def parse_environ(requires: Optional[List[str]] = None) -> TYPE_CONFIG_PARSED:
         (_env_var, _default) = _settings
         config[_key] = os.environ.get(_env_var, str(_default))
 
+    for _key in config.keys():
+        if _key in _CONFIG_BOOLS:
+            continue
+        if config[_key] == "None":
+            config[_key] = None
+
     for _key in _CONFIG_BOOLS:
         _v = config[_key]
         if not isinstance(_v, bool):
             if _v is None:
                 config[_key] = False
             elif isinstance(_v, str):
-                config[_key] = bool(int(_v))
+                if _v.lower() in ("true", "false", "none"):
+                    config[_key] = bool(_v)
+                elif _v.isdigit():
+                    config[_key] = bool(int(_v))
+                else:
+                    raise ValueError("unknown string value for bools")
             elif isinstance(_v, int):
                 config[_key] = bool(_v)
-
     if requires:
         if not isinstance(requires, list):
             raise ValueError("`requires` must be a list")

@@ -155,7 +155,7 @@ class FacebookHub(object):
                 _fb_api_version = _fb_api_version[1:]
             else:
                 if not RE_api_version_fixable.match(_fb_api_version):
-                    raise ValueError("Invalid API version")
+                    raise ValueError("Invalid API version: %s" % _fb_api_version)
         self.fb_api_version = float(_fb_api_version) if _fb_api_version else None
 
         if _fb_api_version is None:
@@ -1006,10 +1006,6 @@ class FacebookHub(object):
         following is based on Sunil Arora's blog post - http://sunilarora.org/parsing-signedrequest-parameter-in-python-bas
         """
         # raise NotImplementedError("`verify_signed_request` was removed in v0.6.0")
-
-        import pdb
-
-        pdb.set_trace()
 
         # code below is broken
 
