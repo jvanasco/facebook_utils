@@ -578,6 +578,9 @@ class FacebookHub(object):
                             if ("type" in error) and (
                                 error["type"] == "OAuthException"
                             ):
+                                print("#=" * 80)
+                                print(error)
+                                print("#=" * 80)
                                 raise ApiAuthError(**error)
                             raise ApiError(**error)
                         raise ApiError(
