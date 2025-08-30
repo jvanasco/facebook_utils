@@ -10,7 +10,6 @@ from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
-from typing import Literal
 from typing import Optional
 from typing import overload
 from typing import Tuple
@@ -22,6 +21,7 @@ from urllib.parse import urlparse
 
 # pypi
 import requests
+from typing_extensions import Literal
 
 # local
 from .api_urls import FacebookApiUrls

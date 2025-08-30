@@ -18,6 +18,7 @@ with open(os.path.join(HERE, "README.md")) as fp:
 
 install_requires = [
     "requests>=1.2",
+    "typing_extensions",
 ]
 tests_require = [
     "mypy",
