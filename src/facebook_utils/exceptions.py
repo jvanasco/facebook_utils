@@ -1,7 +1,9 @@
 # stdlib
 import datetime
 from typing import Optional
-from typing import TypedDict
+
+# pypi
+from typing_extensions import TypedDict
 
 # ==============================================================================
 
