@@ -98,7 +98,7 @@ class FacebookApiUrls(object):
         fb_url_graph_api: str,
         app_id: str,
         redirect_uri: str,
-        app_secret,
+        app_secret: str,
         submitted_code: str,
     ) -> str:
         url = URL_OAUTH_ACCESSTOKEN_CODE.format(

@@ -236,6 +236,10 @@ class FacebookHub(object):
             redirect_uri = self.oauth_code_redirect_uri
         if scope is None:
             scope = self.app_scope
+        if self.app_secret is None:
+            raise ValueError(
+                "`FacebookHub.oauth_code__url_access_token` MUST be invoked with a configured `self.app_secret`."
+            )
         if TYPE_CHECKING:
             assert self.app_id is not None
             assert redirect_uri is not None
