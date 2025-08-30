@@ -12,6 +12,9 @@ on:
 jobs:
   run-core-tests:
     name: core-tests-${{ matrix.python-version }}-${{ matrix.os }}
+    permissions:
+      contents: read
+      pull-requests: write
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
