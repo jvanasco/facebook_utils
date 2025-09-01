@@ -11,9 +11,10 @@ from urllib.parse import quote_plus
 # local
 import facebook_utils as fb
 from facebook_utils.api_versions import API_VERSIONS
-from facebook_utils.exceptions import ApiRatelimitedError
 from facebook_utils.utils import parse_environ
 from facebook_utils.utils import TYPE_CONFIG_PARSED
+
+# from facebook_utils.exceptions import ApiRatelimitedError
 
 
 # ==============================================================================
@@ -22,6 +23,13 @@ from facebook_utils.utils import TYPE_CONFIG_PARSED
 TODAY = datetime.datetime.today()
 APP_RATELIMITED = False
 GO_SLOWLY = True
+
+TEST_LEGACY = bool(int(os.getenv("FBUTILS_TEST_LEGACY", "0")))
+
+
+def callback_ratelimited():
+    global APP_RATELIMITED
+    APP_RATELIMITED = True
 
 
 # ------------------------------------------------------------------------------
@@ -46,6 +54,8 @@ class _TestVersionedAPI(object):
                     "Skipping Test against Facebook API v%s; Support ended %s"
                     % (self.fb_api_version, _api_end)
                 )
+        if APP_RATELIMITED:
+            raise ValueError("ApiRatelimitedError Expected")
 
 
 class _TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
@@ -105,6 +115,7 @@ class _TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
             oauth_code_redirect_uri="https://%s/oauth-code" % app_domain,
             oauth_token_redirect_uri="https://%s/oauth-token" % app_domain,
             fb_api_version=self.fb_api_version,
+            callback_ratelimited=callback_ratelimited,
         )
         return hub
 
@@ -344,18 +355,13 @@ class _TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
         access_token = self.FB_UTILS_ENV["access_token"]
         if TYPE_CHECKING:
             assert access_token is None or isinstance(access_token, str)
-        try:
-            fb_data = hub.api_proxy(
-                expected_format="json.load",
-                get_data=get_data,
-                access_token=access_token,
-            )
-            if GO_SLOWLY:
-                time.sleep(1)
-        except ApiRatelimitedError:
-            print("ApiRatelimitedError")
-            APP_RATELIMITED = True
-            raise
+        fb_data = hub.api_proxy(
+            expected_format="json.load",
+            get_data=get_data,
+            access_token=access_token,
+        )
+        if GO_SLOWLY:
+            time.sleep(1)
         self.assertIn("og_object", fb_data[url])
         self.assertIn("id", fb_data[url]["og_object"])
         self.assertEqual(fb_data[url]["og_object"]["id"], urls[url])
@@ -391,16 +397,11 @@ class _TestFacebookUtils_Authenticated_Core(_TestVersionedAPI):
 
         # SETUP start
         hub = self._newHub()
-        try:
-            fb_data = hub.graph__get_profile_for_access_token(
-                access_token=self.FB_UTILS_ENV["access_token"]
-            )
-            if GO_SLOWLY:
-                time.sleep(1)
-        except ApiRatelimitedError:
-            print("ApiRatelimitedError")
-            APP_RATELIMITED = True
-            raise
+        fb_data = hub.graph__get_profile_for_access_token(
+            access_token=self.FB_UTILS_ENV["access_token"]
+        )
+        if GO_SLOWLY:
+            time.sleep(1)
         self.assertTrue(fb_data)
         user_id = fb_data["id"]
         # SETUP end
@@ -447,11 +448,20 @@ class _TestFacebookUtils_UnAuthenticated(_TestVersionedAPI):
         """
         env = os.environ
         hub = fb.FacebookHub(
-            unauthenticated_hub=True, fb_api_version=self.fb_api_version
+            unauthenticated_hub=True,
+            fb_api_version=self.fb_api_version,
+            callback_ratelimited=callback_ratelimited,
         )
         return hub
 
     def test_graph__get_object_single(self):
+        """
+        UPDATE:
+
+        2025 - Submitting a URL to the Facebook API no longer seems supported.
+               Some online posts suggest query table system was capable of providing
+               this info at some point, but I am not sure about the current utility.
+        """
         urls = {"https://example.com": "482839044422"}
         url = list(urls.keys())[0]
         hub = self._newHub()
@@ -479,13 +489,21 @@ class _TestFacebookUtils_UnAuthenticated(_TestVersionedAPI):
                         it also returns 411149314032
             http://example.com comes back as either 395320319544 or 389691382139
             I filed bug reports for both
+
+
+        UPDATE:
+
+        2025 - Submitting a URL to the Facebook API no longer seems supported.
+               Some online posts suggest query table system was capable of providing
+               this info at some point, but I am not sure about the current utility.
         """
         # url: facebook opengraph id
         urls = {
-            "http://example.com": (
-                "395320319544",
-                "389691382139",
-            ),  # sometimes sends 389691382139 ??
+            #  This no longer exists?
+            # "http://example.com": (
+            #     "395320319544",
+            #    "389691382139",
+            # ),  # sometimes sends 389691382139 ??
             "https://example.com": ("482839044422",),  # only this has popped up so far
             "http://facebook.com": (
                 "10151063484068358",
@@ -530,42 +548,49 @@ class TestFacebookUtils_Authenticated_NoVersion(
     fb_api_version = None
 
 
+@unittest.skipUnless(TEST_LEGACY, "requires TEST_LEGACY")
 class TestFacebookUtils_Authenticated_16_0(
     _TestFacebookUtils_Authenticated_Core, unittest.TestCase
 ):
     fb_api_version = "16.0"
 
 
+@unittest.skipUnless(TEST_LEGACY, "requires TEST_LEGACY")
 class TestFacebookUtils_Authenticated_17_0(
     _TestFacebookUtils_Authenticated_Core, unittest.TestCase
 ):
     fb_api_version = "17.0"
 
 
+@unittest.skipUnless(TEST_LEGACY, "requires TEST_LEGACY")
 class TestFacebookUtils_Authenticated_18_0(
     _TestFacebookUtils_Authenticated_Core, unittest.TestCase
 ):
     fb_api_version = "18.0"
 
 
+@unittest.skipUnless(TEST_LEGACY, "requires TEST_LEGACY")
 class TestFacebookUtils_Authenticated_19_0(
     _TestFacebookUtils_Authenticated_Core, unittest.TestCase
 ):
     fb_api_version = "19.0"
 
 
+@unittest.skipUnless(TEST_LEGACY, "requires TEST_LEGACY")
 class TestFacebookUtils_Authenticated_20_0(
     _TestFacebookUtils_Authenticated_Core, unittest.TestCase
 ):
     fb_api_version = "20.0"
 
 
+@unittest.skipUnless(TEST_LEGACY, "requires TEST_LEGACY")
 class TestFacebookUtils_Authenticated_21_0(
     _TestFacebookUtils_Authenticated_Core, unittest.TestCase
 ):
     fb_api_version = "21.0"
 
 
+@unittest.skipUnless(TEST_LEGACY, "requires TEST_LEGACY")
 class TestFacebookUtils_Authenticated_22_0(
     _TestFacebookUtils_Authenticated_Core, unittest.TestCase
 ):
@@ -587,42 +612,49 @@ class TestFacebookUtils_UnAuthenticated_NoVersion(
     fb_api_version = None
 
 
+@unittest.skipUnless(TEST_LEGACY, "requires TEST_LEGACY")
 class TestFacebookUtils_UnAuthenticated_16_0(
     _TestFacebookUtils_UnAuthenticated, unittest.TestCase
 ):
     fb_api_version = "16.0"
 
 
+@unittest.skipUnless(TEST_LEGACY, "requires TEST_LEGACY")
 class TestFacebookUtils_UnAuthenticated_17_0(
     _TestFacebookUtils_UnAuthenticated, unittest.TestCase
 ):
     fb_api_version = "17.0"
 
 
+@unittest.skipUnless(TEST_LEGACY, "requires TEST_LEGACY")
 class TestFacebookUtils_UnAuthenticated_18_0(
     _TestFacebookUtils_UnAuthenticated, unittest.TestCase
 ):
     fb_api_version = "18.0"
 
 
+@unittest.skipUnless(TEST_LEGACY, "requires TEST_LEGACY")
 class TestFacebookUtils_UnAuthenticated_19_0(
     _TestFacebookUtils_UnAuthenticated, unittest.TestCase
 ):
     fb_api_version = "19.0"
 
 
+@unittest.skipUnless(TEST_LEGACY, "requires TEST_LEGACY")
 class TestFacebookUtils_UnAuthenticated_20_0(
     _TestFacebookUtils_UnAuthenticated, unittest.TestCase
 ):
     fb_api_version = "20.0"
 
 
+@unittest.skipUnless(TEST_LEGACY, "requires TEST_LEGACY")
 class TestFacebookUtils_UnAuthenticated_21_0(
     _TestFacebookUtils_UnAuthenticated, unittest.TestCase
 ):
     fb_api_version = "21.0"
 
 
+@unittest.skipUnless(TEST_LEGACY, "requires TEST_LEGACY")
 class TestFacebookUtils_UnAuthenticated_22_0(
     _TestFacebookUtils_UnAuthenticated, unittest.TestCase
 ):

@@ -20,6 +20,7 @@ def warn_future(message: str) -> None:
 
 
 # ------------------------------------------------------------------------------
+
 TYPE_MAPPING_ENTRY = Tuple[str, Union[int, bool, None]]
 TYPE_CONFIG_PARSED = Dict[str, Union[str, bool, None]]
 

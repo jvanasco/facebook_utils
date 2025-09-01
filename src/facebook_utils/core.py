@@ -102,6 +102,7 @@ class FacebookHub(object):
     ssl_verify: bool = True
     secure_only: bool = True
     unauthenticated_hub: bool = False
+    callback_ratelimited: Optional[Callable] = None
 
     # these will be urls, preferably versioned
     fb_url_graph_api: str
@@ -126,6 +127,7 @@ class FacebookHub(object):
         app_scope: Optional[str] = None,
         app_id: Optional[str] = None,
         unauthenticated_hub: Optional[bool] = None,
+        callback_ratelimited: Optional[Callable] = None,
     ):
         """
         Initialize the ``FacebookHub`` object with some variables.
@@ -177,6 +179,7 @@ class FacebookHub(object):
         self.secure_only = secure_only
         self.app_scope = app_scope
         self.app_id = app_id
+        self.callback_ratelimited = callback_ratelimited
 
     def extract__code_from_redirect(self, url: str) -> str:
         return extract__code_from_redirect(url)
@@ -596,6 +599,11 @@ class FacebookHub(object):
                     except Exception:
                         raise
                 if self.last_response_is_ratelimited:
+                    if self.callback_ratelimited is not None:
+                        import pdb
+
+                        pdb.set_trace()
+                        self.callback_ratelimited()
                     raise ApiRatelimitedError(
                         message="Application is ratelimited. %s"
                         % self.last_response_usage,
