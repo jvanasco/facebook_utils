@@ -16,6 +16,8 @@ from facebook_utils.utils import TYPE_CONFIG_PARSED
 
 # from facebook_utils.exceptions import ApiRatelimitedError
 
+if TYPE_CHECKING:
+    from requests import Response
 
 # ==============================================================================
 
@@ -27,7 +29,7 @@ GO_SLOWLY = True
 TEST_LEGACY = bool(int(os.getenv("FBUTILS_TEST_LEGACY", "0")))
 
 
-def callback_ratelimited():
+def callback_ratelimited(response: "Response") -> None:
     global APP_RATELIMITED
     APP_RATELIMITED = True
 

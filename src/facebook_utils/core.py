@@ -49,6 +49,7 @@ from .utils import warn_future
 
 if TYPE_CHECKING:
     import pyramid.request
+    from requests import Response
 
 # ==============================================================================
 
@@ -127,7 +128,7 @@ class FacebookHub(object):
         app_scope: Optional[str] = None,
         app_id: Optional[str] = None,
         unauthenticated_hub: Optional[bool] = None,
-        callback_ratelimited: Optional[Callable] = None,
+        callback_ratelimited: Optional[Callable[["Response"], None]] = None,
     ):
         """
         Initialize the ``FacebookHub`` object with some variables.
@@ -138,6 +139,14 @@ class FacebookHub(object):
 
             or
             `unauthenticated_hub=True`
+
+        callback_ratelimited:
+            callable that accepts the `request.Response` object and returns nothing.
+            It will be called before raising the API RateLimited::
+
+                def callback_ratelimited(response: "Response")->None:
+                    global APP_RATELIMITED
+                    APP_RATELIMITED = True
         """
         if unauthenticated_hub is True:
             self.unauthenticated_hub = True
@@ -600,10 +609,7 @@ class FacebookHub(object):
                         raise
                 if self.last_response_is_ratelimited:
                     if self.callback_ratelimited is not None:
-                        import pdb
-
-                        pdb.set_trace()
-                        self.callback_ratelimited()
+                        self.callback_ratelimited(response)
                     raise ApiRatelimitedError(
                         message="Application is ratelimited. %s"
                         % self.last_response_usage,
