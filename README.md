@@ -1,20 +1,31 @@
 facebook_utils
 ==============
 
-This library was created when a lot of things were possible with the Facebook
-Graph API and their official Python SDK did not offer some features and was no
-longer maintained.
+This library was created when a lot of things were possible - or worth doing -
+with the Facebook Graph API, and their official Python SDK did not offer some
+features and was no longer maintained.
 
-Their Graph API quickly lost many of the features. They pushed for a new 
-Business API and SDK. Neither are good or worth using.
+Facebook's Graph API quickly lost many of it's worthwhile features.
+Eventually, they pushed for a new Business API and SDK that focuses on other
+things. Neither are particularly useful to accomplish the previously
+capable tasks. The utility of the Facebook service itself is increasingly
+questionable as well.
 
-This library is lightly maintained to support legacy projects that are migrating
-off the graph API and Facebook login.  It is not intended for robust usage, as
-their API is no longer capable of robust usage.
+This library has been lightly updated to support legacy projects that once
+used the Graph API and Facebook Login. This library is not intended for robust
+usage or long term use.
 
 The current project goals are to have proper typing and modern Python support
-as projects move off. New features are not intended, only increased code quality
+for the remaining API utilities as projects move off this package and/or
+Facebook's API. New features are not intended, only increased code quality
 and integration.
+
+Several tests are broken, as the functionality appears to longer work.
+Specifically, the unauthenticated tests for "test_graph__get_object_single" and
+"test_graph__get_object_multiple" no longer work, as they attempt to get the
+Facebook graph IDs for URLs - which is no longer supported via the Graph API.
+
+Additionally, all tests will fail once API Rate Limits are exceeded.
 
 -----
 
@@ -310,17 +321,17 @@ Trial Run
   * `FBUTILS_APP_DOMAIN` : the App's domain. example: dev.example.com
   * `FBUTILS_APP_SCOPE` : The scope. can just be "email"
   * `FBUTILS_REDIRECT_URI_OAUTH_CODE` : the uri to redirect visitors to. this MUST be whitelisted on Facebook's OAuth/Login settings
-  
-3. Run 
+
+3. Run
 
 	python test-interactive.py
 	
 You will see a message like:
 
     Visit the following url to approve.
-    
+
     You will be redirected back to the `FBUTILS_REDIRECT_URI_OAUTH_CODE` URI
-    
+
     > https://www.facebook.com/dialog/oauth?client_id={XXXXX}&scope={XXXXX}&redirect_uri={XXXXX}
 
 Copy/paste that url into a browser window
@@ -333,7 +344,7 @@ Copy the entire `CODE` from the URL and paste it in.  It is okay to leave the
 trailing `#_=_` fragment
 
 This will step you through multiple API calls, asking you to visit the
-authorization URL each time.  
+authorization URL each time.
 
 You should notice the authorization code changes each time, however the Facebook
 API token which is returned will remain the same.
