@@ -62,6 +62,7 @@ jobs:
         FBUTILS_APP_SCOPE: email
         FBUTILS_APP_SECRET: ${{ secrets.FBUTILS_APP_SECRET }}
         FBUTILS_DEBUG: 1
+        FBUTILS_DEBUG_SECRET: ${{ secrets.FBUTILS_DEBUG_SECRET }}
         FBUTILS_ENABLE_SECRETPROOF: 1
         FBUTILS_REDIRECT_URI_OAUTH_CODE: https://dev.aptise.com/python-sdk-utils/oauth-code
         FBUTILS_REDIRECT_URI_OAUTH_TOKEN: https://dev.aptise.com/python-sdk-utils/oauth-token
