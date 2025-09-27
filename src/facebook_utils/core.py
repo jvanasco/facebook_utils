@@ -591,7 +591,9 @@ class FacebookHub(object):
                                 error["type"] == "OAuthException"
                             ):
                                 print("#=" * 80)
-                                print(error)
+                                print("error", error)
+                                print("get_data", get_data)
+                                print("post_data", post_data)
                                 print("#=" * 80)
                                 raise ApiAuthError(**error)
                             raise ApiError(**error)
