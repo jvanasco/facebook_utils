@@ -31,7 +31,6 @@ _CONFIG_MAPPING: Dict[str, TYPE_MAPPING_ENTRY] = {
     "app_scope": ("FBUTILS_APP_SCOPE", None),
     "app_secret": ("FBUTILS_APP_SECRET", None),
     "debug": ("FBUTILS_DEBUG", 0),
-    "debug_secret": ("FBUTILS_DEBUG_SECRET", None),
     "enable_secretproof": ("FBUTILS_ENABLE_SECRETPROOF", 1),
     "fb_api_version": ("FBUTILS_FB_API_VERSION", None),
     "oauth_code_redirect_uri": ("FBUTILS_REDIRECT_URI_OAUTH_CODE", None),
@@ -92,10 +91,4 @@ def parse_environ(requires: Optional[List[str]] = None) -> TYPE_CONFIG_PARSED:
         if _errors:
             errors = ", ".join(["`%s`" % i for i in _errors])
             raise ValueError("Missing required items: %s" % errors)
-    print("#" * 80)
-    print("parsed")
-    import pprint
-
-    pprint.pprint(config)
-    print("#" * 80)
     return config

@@ -601,10 +601,6 @@ class FacebookHub(object):
                                     print(
                                         "access_token", True if access_token else False
                                     )
-                                    print(
-                                        "FBUTILS_DEBUG_SECRET",
-                                        _fbutils_env["debug_secret"],
-                                    )
                                     print("#=" * 80)
                                 raise ApiAuthError(**error)
                             raise ApiError(**error)
