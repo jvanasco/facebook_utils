@@ -92,4 +92,10 @@ def parse_environ(requires: Optional[List[str]] = None) -> TYPE_CONFIG_PARSED:
         if _errors:
             errors = ", ".join(["`%s`" % i for i in _errors])
             raise ValueError("Missing required items: %s" % errors)
+    print("#" * 80)
+    print("parsed")
+    import pprint
+
+    pprint.pprint(config)
+    print("#" * 80)
     return config
