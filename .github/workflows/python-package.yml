@@ -57,11 +57,11 @@ jobs:
         pip list
     - name: Test with pytest
       env:
-        FBUTILS_ACCESS_TOKEN: secrets.FBUTILS_ACCESS_TOKEN
+        FBUTILS_ACCESS_TOKEN: ${{ secrets.FBUTILS_ACCESS_TOKEN }}
         FBUTILS_APP_DOMAIN: dev.aptise.com
         FBUTILS_APP_ID: 802035933277071
         FBUTILS_APP_SCOPE: email
-        FBUTILS_APP_SECRET: secrets.FBUTILS_APP_SECRET
+        FBUTILS_APP_SECRET: ${{ secrets.FBUTILS_APP_SECRET }}
         FBUTILS_DEBUG: 1
         FBUTILS_DEBUG_SECRET: ${{ secrets.FBUTILS_DEBUG_SECRET }}
         FBUTILS_ENABLE_SECRETPROOF: 1
