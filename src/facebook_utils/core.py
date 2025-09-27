@@ -5,6 +5,7 @@ import hashlib
 import hmac
 import json
 import logging
+import pprint
 import time
 from typing import Any
 from typing import Callable
@@ -590,11 +591,18 @@ class FacebookHub(object):
                             if ("type" in error) and (
                                 error["type"] == "OAuthException"
                             ):
-                                print("#=" * 80)
-                                print("error", error)
-                                print("get_data", get_data)
-                                print("post_data", post_data)
-                                print("#=" * 80)
+                                if DEBUG:
+                                    print("#=" * 80)
+                                    print("api_proxy")
+                                    print("url", url)
+                                    print("error", error)
+                                    print("get_data", get_data)
+                                    print("post_data", post_data)
+                                    print("self", pprint.pformat(self.__dict__))
+                                    print(
+                                        "access_token", True if access_token else False
+                                    )
+                                    print("#=" * 80)
                                 raise ApiAuthError(**error)
                             raise ApiError(**error)
                         raise ApiError(
