@@ -14,10 +14,10 @@ from facebook_utils.api_versions import API_VERSIONS
 from facebook_utils.utils import parse_environ
 from facebook_utils.utils import TYPE_CONFIG_PARSED
 
-# from facebook_utils.exceptions import ApiRatelimitedError
-
 if TYPE_CHECKING:
     from requests import Response
+
+# from facebook_utils.exceptions import ApiRatelimitedError
 
 # ==============================================================================
 
@@ -27,6 +27,7 @@ APP_RATELIMITED = False
 GO_SLOWLY = True
 
 TEST_LEGACY = bool(int(os.getenv("FBUTILS_TEST_LEGACY", "0")))
+TEST_DEPRECATED = bool(int(os.getenv("FBUTILS_TEST_DEPRECATED", "0")))
 
 
 def callback_ratelimited(response: "Response") -> None:
@@ -456,6 +457,9 @@ class _TestFacebookUtils_UnAuthenticated(_TestVersionedAPI):
         )
         return hub
 
+    @unittest.skipUnless(
+        TEST_DEPRECATED, "This API functionality appears to be removed."
+    )
     def test_graph__get_object_single(self):
         """
         UPDATE:
@@ -484,6 +488,9 @@ class _TestFacebookUtils_UnAuthenticated(_TestVersionedAPI):
         self.assertTrue(hub._last_response)
         self.assertFalse(hub.last_response_is_ratelimited)
 
+    @unittest.skipUnless(
+        TEST_DEPRECATED, "This API functionality appears to be removed."
+    )
     def test_graph__get_object_multiple(self):
         """
         facebook's API is a little less than stellar.
