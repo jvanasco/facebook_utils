@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 """
 INSTRUCTIONS
 
@@ -9,15 +7,15 @@ The following environment variables are required:
 
     export FBUTILS_APP_ID=xxxxxxxxx
     export FBUTILS_APP_SECRET=xxxxxxxxxx
-    export FBUTILS_APP_SECRETPROOF=1
+    export FBUTILS_ENABLE_SECRETPROOF=1
     export FBUTILS_APP_SCOPE=email
     export FBUTILS_APP_DOMAIN=xxxxxxxxxx
     export FBUTILS_REDIRECT_URI_OAUTH_CODE=https://myapp.example.com/oauth?response_type=code'
 
 """
 
-# pypi
-from six.moves import input as _input
+# stdlib
+from typing import TYPE_CHECKING
 
 # local
 import facebook_utils
@@ -30,9 +28,9 @@ from facebook_utils.utils import parse_environ
 REQUIRED_ENV = [
     "FBUTILS_APP_ID",
     "FBUTILS_APP_SECRET",
-    "FBUTILS_APP_SECRETPROOF",
-    "FBUTILS_APP_DOMAIN",
     "FBUTILS_APP_SCOPE",
+    "FBUTILS_ENABLE_SECRETPROOF",
+    # "FBUTILS_APP_DOMAIN",
     "FBUTILS_REDIRECT_URI_OAUTH_CODE",
 ]
 FB_UTILS_ENV = parse_environ(requires=REQUIRED_ENV)
@@ -42,12 +40,27 @@ FB_UTILS_ENV = parse_environ(requires=REQUIRED_ENV)
 
 
 def new_fb_object():
+
+    # assured by parse_environ above
+    app_id = FB_UTILS_ENV["app_id"]
+    app_secret = FB_UTILS_ENV["app_secret"]
+    app_scope = FB_UTILS_ENV["app_scope"]
+    enable_secretproof = FB_UTILS_ENV["enable_secretproof"]
+    oauth_code_redirect_uri = FB_UTILS_ENV["oauth_code_redirect_uri"]
+
+    if TYPE_CHECKING:
+        assert isinstance(app_id, str)
+        assert isinstance(app_secret, str)
+        assert isinstance(app_scope, str)
+        assert isinstance(enable_secretproof, bool)
+        assert isinstance(oauth_code_redirect_uri, str)
+
     return facebook_utils.FacebookHub(
-        app_id=FB_UTILS_ENV["app_id"],
-        app_secret=FB_UTILS_ENV["app_secret"],
-        app_secretproof=FB_UTILS_ENV["app_secretproof"],
-        app_scope=FB_UTILS_ENV["app_scope"],
-        oauth_code_redirect_uri=FB_UTILS_ENV["oauth_code_redirect_uri"],
+        app_id=app_id,
+        app_secret=app_secret,
+        app_scope=app_scope,
+        enable_secretproof=enable_secretproof,
+        oauth_code_redirect_uri=oauth_code_redirect_uri,
         debug_error=True,
     )
 
@@ -59,10 +72,8 @@ def _get_code(_hub):
         ">>> "
     )
     print(_hub.oauth_code__url_dialog())
-    _code = _input("""What is the `code` query param in the url? >>> """)
-    _code = _code.strip()
-    # remove fragments
-    _code = _code.split("#")[0]
+    _url = input("""Please copy/paste the entire URL you were redirected to >>> """)
+    _code = _hub.extract__code_from_redirect(_url)
     return _code
 
 

@@ -1,6 +1,34 @@
 facebook_utils
 ==============
 
+This library was created when a lot of things were possible - or worth doing -
+with the Facebook Graph API, and their official Python SDK did not offer some
+features and was no longer maintained.
+
+Facebook's Graph API quickly lost many of it's worthwhile features.
+Eventually, they pushed for a new Business API and SDK that focuses on other
+things. Neither are particularly useful to accomplish the previously
+capable tasks. The utility of the Facebook service itself is increasingly
+questionable as well.
+
+This library has been lightly updated to support legacy projects that once
+used the Graph API and Facebook Login. This library is not intended for robust
+usage or long term use.
+
+The current project goals are to have proper typing and modern Python support
+for the remaining API utilities as projects move off this package and/or
+Facebook's API. New features are not intended, only increased code quality
+and integration.
+
+Several tests are broken, as the functionality appears to longer work.
+Specifically, the unauthenticated tests for "test_graph__get_object_single" and
+"test_graph__get_object_multiple" no longer work, as they attempt to get the
+Facebook graph IDs for URLs - which is no longer supported via the Graph API.
+
+Additionally, all tests will fail once API Rate Limits are exceeded.
+
+-----
+
 A collection of utilities for integrating User Accounts with Facebook.com.
 
 Right now this library is focused on oAuth Login and Graph API operations
@@ -32,7 +60,7 @@ Configure a hub with something like the following:
 	from facebook_utils import FacebookHub
     hub = FacebookHub(app_id = x,
                       app_secret = y,
-                      app_secretproof = True
+                      enable_app_secretproof = True
                       )
 
 Or make it unuthenticated. It's up to you.
@@ -164,6 +192,7 @@ file: development.ini
     # the default prefix is fbutils
     fbutils.id = 123
     fbutils.secret = 123
+    facebook.app.enable_secretproof = 1
     fbutils.scope = email, user_birthday, user_checkins, offline_access
     fbutils.oauth_code_redirect_uri = http://127.0.0.1:5010/facebook-oauth-redirect
     fbutils.api_version = v2.8
@@ -176,7 +205,7 @@ or:
     fbutils.prefix = facebook.app
     facebook.app.id = 123
     facebook.app.secret = 123
-    facebook.app.secretproof = True
+    facebook.app.enable_secretproof = True
     facebook.app.scope = email, user_birthday, user_checkins, offline_access
     facebook.app.oauth_code_redirect_uri = http://127.0.0.1:5010/facebook-oauth-redirect
     facebook.app.api_version = v2.8
@@ -286,34 +315,36 @@ Trial Run
 
 2. You need this information exported in your environment
 
-	FBUTILS_APP_ID : The numeric ID for the app
-	FBUTILS_APP_SECRET : You generate this on the Facebook Settings
-	FBUTILS_APP_SECRETPROOF=1 : 
-	FBUTILS_APP_DOMAIN : the App's domain. example: dev.example.com
-	FBUTILS_APP_SCOPE : The scope. can just be "email"
-	FBUTILS_REDIRECT_URI_OAUTH_CODE : the uri to redirect visitors to.
-		this MUST be whitelisted on Facebook's OAuth/Login settings
+  * `FBUTILS_APP_ID` : The numeric ID for the app
+  * `FBUTILS_APP_SECRET` : You generate this on the Facebook Settings
+  * `FBUTILS_ENABLE_SECRETPROOF` : Enclose a HMAC secret signature? 1 or 0
+  * `FBUTILS_APP_DOMAIN` : the App's domain. example: dev.example.com
+  * `FBUTILS_APP_SCOPE` : The scope. can just be "email"
+  * `FBUTILS_REDIRECT_URI_OAUTH_CODE` : the uri to redirect visitors to. this MUST be whitelisted on Facebook's OAuth/Login settings
 
-3. Run 
+3. Run
 
 	python test-interactive.py
 	
 You will see a message like:
 
-    Visit the following url to approve.  You will be redirected back to the `FBUTILS_REDIRECT_URI_OAUTH_CODE` URI
-https://www.facebook.com/dialog/oauth?client_id={XXXXX}&scope={XXXXX}&redirect_uri={XXXXX}
+    Visit the following url to approve.
+
+    You will be redirected back to the `FBUTILS_REDIRECT_URI_OAUTH_CODE` URI
+
+    > https://www.facebook.com/dialog/oauth?client_id={XXXXX}&scope={XXXXX}&redirect_uri={XXXXX}
 
 Copy/paste that url into a browser window
 
 You will be redirected to a url like:
 
-	{{https://dev.cliqued.in/account/login/facebook-oauth?response_type=code}}&code={{CODE}}#_=_
+	> {{https://dev.cliqued.in/account/login/facebook-oauth?response_type=code}}&code={{CODE}}#_=_
 
 Copy the entire `CODE` from the URL and paste it in.  It is okay to leave the
 trailing `#_=_` fragment
 
 This will step you through multiple API calls, asking you to visit the
-authorization URL each time.  
+authorization URL each time.
 
 You should notice the authorization code changes each time, however the Facebook
 API token which is returned will remain the same.
@@ -326,20 +357,20 @@ Unit Tests require the following environment vars to be set:
 
     FBUTILS_APP_ID
     FBUTILS_APP_SECRET
-    FBUTILS_APP_SECRETPROOF
     FBUTILS_APP_SCOPE
     FBUTILS_ACCESS_TOKEN
     FBUTILS_APP_DOMAIN
+    FBUTILS_ENABLE_SECRETPROOF
 
 it should be simple...
 
     export FBUTILS_APP_ID="app_id_from_facebook.com"
     export FBUTILS_APP_SECRET="app_secret_from_facebook.com"
-    export FBUTILS_APP_SECRETPROOF=set if you locked this down on facebook
     export FBUTILS_APP_SCOPE="email,user_activities,user_status,user_posts"
     export FBUTILS_APP_DOMAIN='allowlisted domain'
-    export FBUTILS_REDIRECT_URI_OAUTH_CODE= configured on the facebook dashboard
     export FBUTILS_ACCESS_TOKEN="from_API_operations, or generate via developer interface"
+    export FBUTILS_ENABLE_SECRETPROOF=set if you locked this down on facebook
+    export FBUTILS_REDIRECT_URI_OAUTH_CODE= configured on the facebook dashboard
 
 
 To generate a `FBUTILS_ACCESS_TOKEN` value, you can use the `tests/generate_credentials.py`
@@ -358,9 +389,9 @@ Set in `.github/workflows/python-package.yml`
 _____________________________________________
 
 * `FBUTILS_APP_ID`
-* `FBUTILS_APP_SECRETPROOF`
 * `FBUTILS_APP_SCOPE`
 * `FBUTILS_APP_DOMAIN`
+* `FBUTILS_ENABLE_SECRETPROOF`
 * `FBUTILS_REDIRECT_URI_OAUTH_CODE`
 * `FBUTILS_REDIRECT_URI_OAUTH_TOKEN`
 
